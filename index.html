@@ -33,10 +33,12 @@
   .checklist-item.missing .cl-icon { color: var(--gray-2); }
   .cl-icon { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
   .cl-label { font-size: 13px; flex: 1; }
-  .moto-bar { background: var(--white); border-bottom: 1px solid var(--gray-2); padding: 12px 20px; display: flex; align-items: center; gap: 10px; }
-  .moto-bar-label { font-size: 11px; color: var(--gray-3); text-transform: uppercase; letter-spacing: 1px; font-weight: 500; white-space: nowrap; }
-  .moto-bar-input { flex: 1; border: 1.5px solid var(--gray-2); border-radius: 8px; padding: 7px 12px; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--black); background: var(--gray-1); outline: none; transition: border-color 0.2s; max-width: 200px; }
+  .moto-bar { background: var(--white); border-bottom: 1px solid var(--gray-2); padding: 14px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .moto-row { display: flex; align-items: center; gap: 10px; }
+  .moto-bar-label { font-size: 10px; color: var(--gray-3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; white-space: nowrap; min-width: 64px; }
+  .moto-bar-input { flex: 1; border: 1.5px solid var(--gray-2); border-radius: 8px; padding: 8px 12px; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--black); background: var(--gray-1); outline: none; transition: border-color 0.2s; }
   .moto-bar-input:focus { border-color: var(--orange); background: var(--white); }
+  .moto-bar-input.required-empty { border-color: #E24B4A; background: #FFF8F8; }
   .progress-section { background: var(--white); padding: 14px 20px; border-bottom: 1px solid var(--gray-2); }
   .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .progress-label { font-size: 12px; color: var(--gray-3); font-weight: 500; }
@@ -118,8 +120,18 @@
 </div>
 
 <div class="moto-bar">
-  <span class="moto-bar-label">Matrícula</span>
-  <input type="text" class="moto-bar-input" id="matriculaInput" placeholder="Ej: 1234 ABC" />
+  <div class="moto-row">
+    <span class="moto-bar-label">Marca</span>
+    <input type="text" class="moto-bar-input" id="marcaInput" placeholder="Ej: BMW" autocomplete="off" />
+  </div>
+  <div class="moto-row">
+    <span class="moto-bar-label">Modelo</span>
+    <input type="text" class="moto-bar-input" id="modeloInput" placeholder="Ej: R 1200 GS" autocomplete="off" />
+  </div>
+  <div class="moto-row">
+    <span class="moto-bar-label">Matrícula</span>
+    <input type="text" class="moto-bar-input" id="matriculaInput" placeholder="Ej: 2085-KYH" autocomplete="off" />
+  </div>
 </div>
 
 <div class="progress-section">
@@ -239,8 +251,11 @@ async function processImage(file,docId) {
     const docType=DOC_TYPES.find(d=>d.id===docId);
     const mat=document.getElementById('matriculaInput').value.trim();
     const base=docType?.renameable?(document.getElementById('label_'+docId)?.textContent||'Otros'):docType.label;
-    const safe=s=>s.replace(/\s+/g,'_').replace(/[^\w_]/g,'');
-    const pdfName=mat?`${safe(mat)}_${safe(base)}.pdf`:`${safe(base)}.pdf`;
+    const marca=document.getElementById('marcaInput').value.trim();
+    const modelo=document.getElementById('modeloInput').value.trim();
+    const safe=s=>s.replace(/\s+/g,'_').replace(/[^\w_]/g,'').toUpperCase();
+    const prefix=[marca,modelo,mat].filter(Boolean).map(safe).join('_');
+    const pdfName=prefix?`${prefix}_${safe(base)}.pdf`:`${safe(base)}.pdf`;
     const pdfBlob=pdf.output('blob');
     uploadedDocs[docId]={blob:pdfBlob,filename:pdfName,size:(pdfBlob.size/1024).toFixed(1)+' KB',docType:base};
     document.getElementById('card_'+docId).classList.add('uploaded');
@@ -278,8 +293,24 @@ document.getElementById('submitBtn').addEventListener('click',function(){
   if(!uploaded)return;
 
   // Build checklist
+  const marca=document.getElementById('marcaInput').value.trim();
+  const modelo=document.getElementById('modeloInput').value.trim();
   const mat=document.getElementById('matriculaInput').value.trim();
-  document.getElementById('modalMatricula').textContent=mat?`Matrícula: ${mat.toUpperCase()}`:'Sin matrícula introducida';
+  const missingFields=[];
+  if(!marca) missingFields.push('Marca');
+  if(!modelo) missingFields.push('Modelo');
+  if(!mat) missingFields.push('Matrícula');
+  if(missingFields.length){
+    missingFields.forEach(f=>{
+      const inp=document.getElementById(f.toLowerCase()==='marca'?'marcaInput':f.toLowerCase()==='modelo'?'modeloInput':'matriculaInput');
+      inp.classList.add('required-empty');
+      setTimeout(()=>inp.classList.remove('required-empty'),3000);
+    });
+    showToast('Rellena: '+missingFields.join(', '));
+    return;
+  }
+  const motoName=`${marca.toUpperCase()} ${modelo.toUpperCase()} ${mat.toUpperCase()}`;
+  document.getElementById('modalMatricula').textContent=motoName;
 
   const container=document.getElementById('checklistItems');
   container.innerHTML='';
@@ -317,20 +348,25 @@ async function confirmSend(){
 
   const WEBHOOK_URL='';
   try {
+    const marca=document.getElementById('marcaInput').value.trim().toUpperCase();
+    const modelo=document.getElementById('modeloInput').value.trim().toUpperCase();
+    const mat=document.getElementById('matriculaInput').value.trim().toUpperCase();
+    const motoName=`${marca} ${modelo} ${mat}`;
     if(WEBHOOK_URL){
-      const mat=document.getElementById('matriculaInput').value.trim();
       for(const[docId,doc]of Object.entries(uploadedDocs)){
         const form=new FormData();
         form.append('file',doc.blob,doc.filename);
         form.append('docType',doc.docType);
+        form.append('marca',marca);
+        form.append('modelo',modelo);
         form.append('matricula',mat);
+        form.append('motoName',motoName);
         form.append('filename',doc.filename);
         await fetch(WEBHOOK_URL,{method:'POST',body:form});
       }
     } else { await new Promise(r=>setTimeout(r,1000)); }
-    const mat=document.getElementById('matriculaInput').value.trim();
     const n=Object.keys(uploadedDocs).length;
-    document.getElementById('successMatricula').textContent=mat?`Matrícula: ${mat.toUpperCase()} · ${n} doc${n>1?'s':''} enviado${n>1?'s':''}`:`${n} documento${n>1?'s':''} enviado${n>1?'s':''}`;
+    document.getElementById('successMatricula').textContent=`${motoName} · ${n} doc${n>1?'s':''} enviado${n>1?'s':''}`;
     document.getElementById('successOverlay').classList.add('show');
   } catch(e){
     showToast('Error al enviar. Inténtalo de nuevo.');
@@ -344,6 +380,8 @@ function resetApp(){
   document.getElementById('modalOverlay').classList.remove('show');
   document.getElementById('successOverlay').classList.remove('show');
   for(const k in uploadedDocs)delete uploadedDocs[k];
+  document.getElementById('marcaInput').value='';
+  document.getElementById('modeloInput').value='';
   document.getElementById('matriculaInput').value='';
   buildUI(); updateProgress();
 }
