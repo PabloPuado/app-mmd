@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MMD – Documentación de Vehículo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23E8500A'/><circle cx='50' cy='50' r='18' fill='none' stroke='white' stroke-width='6'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --orange: #E8500A; --orange-dark: #B83D07; --orange-light: #FFF0E8;
+    --black: #1A1A1A; --gray-1: #F5F4F1; --gray-2: #E8E6E0; --gray-3: #9C9A95;
+    --white: #FFFFFF; --success: #2D7A3A; --success-light: #EAF5EC;
+    --font-display: 'Bebas Neue', sans-serif; --font-body: 'DM Sans', sans-serif; --radius: 14px;
+  }
+  html, body { font-family: var(--font-body); background: var(--gray-1); color: var(--black); min-height: 100vh; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  .header { background: var(--black); position: sticky; top: 0; z-index: 100; }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 3px solid var(--orange); }
+  .logo-area { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 36px; height: 36px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo-text { font-family: var(--font-display); color: var(--white); font-size: 20px; letter-spacing: 1px; line-height: 1; }
+  .logo-sub { font-family: var(--font-body); color: var(--gray-3); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; line-height: 1; display: block; margin-top: 2px; }
+  .header-badge { background: var(--orange-light); color: var(--orange-dark); font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+  .webhook-bar { background: #111; padding: 9px 20px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #2a2a2a; }
+  .webhook-label { font-size: 10px; color: var(--gray-3); text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+  .webhook-input { flex: 1; background: #222; border: 1px solid #333; border-radius: 6px; padding: 5px 10px; font-family: var(--font-body); font-size: 11px; color: #ccc; outline: none; }
+  .webhook-input:focus { border-color: var(--orange); }
+  .moto-bar { background: var(--white); border-bottom: 1px solid var(--gray-2); padding: 12px 20px; display: flex; align-items: center; gap: 10px; }
+  .moto-bar-label { font-size: 11px; color: var(--gray-3); text-transform: uppercase; letter-spacing: 1px; font-weight: 500; white-space: nowrap; }
+  .moto-bar-input { flex: 1; border: 1.5px solid var(--gray-2); border-radius: 8px; padding: 7px 12px; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--black); background: var(--gray-1); outline: none; transition: border-color 0.2s; max-width: 200px; }
+  .moto-bar-input:focus { border-color: var(--orange); background: var(--white); }
+  .progress-section { background: var(--white); padding: 14px 20px; border-bottom: 1px solid var(--gray-2); }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .progress-label { font-size: 12px; color: var(--gray-3); font-weight: 500; }
+  .progress-count { font-size: 12px; font-weight: 600; color: var(--orange); }
+  .progress-bar-track { height: 5px; background: var(--gray-2); border-radius: 10px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--orange); border-radius: 10px; transition: width 0.4s ease; width: 0%; }
+  @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+  .processing-bar { height: 3px; background: linear-gradient(90deg, transparent, var(--orange), transparent); background-size: 200% 100%; animation: shimmer 1s infinite; display: none; }
+  .processing-bar.active { display: block; }
+  .main { padding: 16px; padding-bottom: 110px; }
+  .section-title { font-size: 11px; color: var(--gray-3); text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-bottom: 10px; margin-top: 4px; padding-left: 2px; }
+  .doc-card { background: var(--white); border-radius: var(--radius); border: 1.5px solid var(--gray-2); margin-bottom: 10px; overflow: hidden; transition: border-color 0.2s; }
+  .doc-card.uploaded { border-color: var(--success); }
+  .doc-card-header { display: flex; align-items: center; padding: 14px 16px; gap: 12px; }
+  .doc-number { width: 26px; height: 26px; border-radius: 6px; background: var(--gray-1); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--gray-3); flex-shrink: 0; transition: background 0.2s, color 0.2s; }
+  .doc-card.uploaded .doc-number { background: var(--success-light); color: var(--success); }
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-name { font-size: 14px; font-weight: 600; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
+  .doc-name-input { font-size: 14px; font-weight: 600; font-family: var(--font-body); color: var(--black); border: none; border-bottom: 2px solid var(--orange); outline: none; background: transparent; width: 100%; padding: 0; }
+  .doc-status { font-size: 11px; color: var(--gray-3); margin-top: 2px; font-weight: 400; }
+  .doc-card.uploaded .doc-status { color: var(--success); font-weight: 500; }
+  .doc-status-icon { width: 22px; height: 22px; flex-shrink: 0; }
+  .doc-actions { padding: 0 16px 14px; display: flex; gap: 8px; }
+  .doc-actions.hidden { display: none; }
+  .btn-action { flex: 1; border: none; border-radius: 10px; padding: 10px 8px; font-family: var(--font-body); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s ease; }
+  .btn-gallery { background: var(--gray-1); color: var(--black); border: 1.5px solid var(--gray-2); }
+  .btn-gallery:active { background: var(--gray-2); }
+  .btn-camera { background: var(--orange); color: var(--white); }
+  .btn-camera:active { background: var(--orange-dark); }
+  .doc-preview { display: none; padding: 0 16px 14px; gap: 10px; align-items: center; }
+  .doc-preview.visible { display: flex; }
+  .preview-pdf-icon { width: 48px; height: 60px; background: #FFF0E8; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid #F5C4A0; flex-shrink: 0; font-size: 22px; }
+  .preview-info { flex: 1; min-width: 0; }
+  .preview-filename { font-size: 12px; font-weight: 600; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .preview-size { font-size: 11px; color: var(--gray-3); margin-top: 2px; }
+  .preview-badge { background: var(--orange-light); color: var(--orange-dark); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-top: 4px; display: inline-block; }
+  .btn-remove { width: 30px; height: 30px; border-radius: 50%; background: var(--gray-1); border: 1.5px solid var(--gray-2); color: var(--gray-3); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  .btn-remove:active { background: #FCEBEB; border-color: #E24B4A; color: #E24B4A; }
+  .rename-btn { background: none; border: none; cursor: pointer; color: var(--gray-3); padding: 2px; display: inline-flex; align-items: center; }
+  .rename-btn:hover { color: var(--orange); }
+  .other-label-row { display: flex; align-items: center; gap: 4px; }
+  .bottom-cta { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--gray-2); padding: 14px 20px; padding-bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 100; }
+  .btn-submit { width: 100%; background: var(--orange); color: var(--white); border: none; border-radius: 14px; padding: 16px; font-family: var(--font-display); font-size: 20px; letter-spacing: 1.5px; cursor: pointer; transition: background 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-submit:active { background: var(--orange-dark); transform: scale(0.98); }
+  .btn-submit:disabled { background: var(--gray-2); color: var(--gray-3); cursor: not-allowed; transform: none; }
+  .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--black); color: var(--white); padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 200; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: var(--white); border-radius: 20px; padding: 32px 24px; text-align: center; max-width: 340px; width: 100%; }
+  .modal-icon { width: 64px; height: 64px; background: var(--success-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .modal-title { font-family: var(--font-display); font-size: 28px; color: var(--black); margin-bottom: 8px; letter-spacing: 1px; }
+  .modal-desc { font-size: 13px; color: var(--gray-3); line-height: 1.6; margin-bottom: 20px; }
+  .modal-highlight { background: var(--gray-1); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 20px; border: 1px solid var(--gray-2); }
+  .btn-modal-ok { width: 100%; background: var(--orange); color: var(--white); border: none; border-radius: 12px; padding: 14px; font-family: var(--font-display); font-size: 18px; letter-spacing: 1px; cursor: pointer; }
+  .btn-modal-ok:active { background: var(--orange-dark); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" fill="none" stroke="white" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="3" fill="white"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-text">MOTOS MADRID DAKAR</div>
+        <span class="logo-sub">Documentación de vehículo</span>
+      </div>
+    </div>
+    <div class="header-badge" id="uploadedBadge">0/9</div>
+  </div>
+  <div class="webhook-bar">
+    <span class="webhook-label">Webhook Make</span>
+    <input type="url" class="webhook-input" id="webhookInput" placeholder="https://hook.eu1.make.com/..." />
+  </div>
+</div>
+
+<div class="moto-bar">
+  <span class="moto-bar-label">Matrícula</span>
+  <input type="text" class="moto-bar-input" id="matriculaInput" placeholder="Ej: 1234 ABC" />
+</div>
+
+<div class="progress-section">
+  <div class="progress-header">
+    <span class="progress-label">Documentos subidos</span>
+    <span class="progress-count" id="progressText">0 de 9 docs</span>
+  </div>
+  <div class="progress-bar-track">
+    <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+</div>
+
+<div class="processing-bar" id="processingBar"></div>
+
+<div class="main">
+  <div class="section-title">Documentación del vehículo</div>
+  <div id="docList"></div>
+</div>
+
+<div class="bottom-cta">
+  <button class="btn-submit" id="submitBtn" disabled>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+    </svg>
+    ENVIAR DOCUMENTACIÓN
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="modal-title">Documentación enviada!</div>
+    <div class="modal-desc">Los archivos han sido convertidos a PDF y enviados al sistema Make para su clasificación automática.</div>
+    <div class="modal-highlight" id="modalMatricula">—</div>
+    <button class="btn-modal-ok" onclick="resetApp()">NUEVA MOTO</button>
+  </div>
+</div>
+
+<input type="file" id="globalFileInput" accept="image/*" style="display:none">
+<input type="file" id="globalCameraInput" accept="image/*" capture="environment" style="display:none">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const { jsPDF } = window.jspdf;
+const DOC_TYPES = [
+  { id: 'permiso_circulacion',   label: 'Permiso de Circulación' },
+  { id: 'ficha_tecnica_anverso', label: 'Ficha Técnica Anverso' },
+  { id: 'ficha_tecnica_reverso', label: 'Ficha Técnica Reverso' },
+  { id: 'contrato_compraventa',  label: 'Contrato de Compraventa' },
+  { id: 'mandato_vendedor',      label: 'Mandato del Vendedor' },
+  { id: 'dni_anverso',           label: 'DNI Anverso' },
+  { id: 'dni_reverso',           label: 'DNI Reverso' },
+  { id: 'itv',                   label: 'ITV' },
+  { id: 'otros',                 label: 'Otros Documentos', renameable: true },
+];
+const uploadedDocs = {};
+let activeDocId = null;
+const iconPending = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8C6C0" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`;
+const iconDone = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+function buildUI() {
+  const list = document.getElementById('docList');
+  list.innerHTML = '';
+  DOC_TYPES.forEach((doc, i) => {
+    const card = document.createElement('div');
+    card.className = 'doc-card'; card.id = 'card_' + doc.id;
+    const nameHTML = doc.renameable
+      ? `<div class="other-label-row"><span id="label_${doc.id}">${doc.label}</span><button class="rename-btn" onclick="startRename('${doc.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>`
+      : `<span>${doc.label}</span>`;
+    card.innerHTML = `<div class="doc-card-header"><div class="doc-number" id="num_${doc.id}">${i+1}</div><div class="doc-info"><div class="doc-name">${nameHTML}</div><div class="doc-status" id="status_${doc.id}">Sin subir</div></div><div class="doc-status-icon" id="icon_${doc.id}">${iconPending()}</div></div><div class="doc-actions" id="actions_${doc.id}"><button class="btn-action btn-gallery" onclick="triggerFile('${doc.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Galería</button><button class="btn-action btn-camera" onclick="triggerCamera('${doc.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Cámara</button></div><div class="doc-preview" id="preview_${doc.id}"><div class="preview-pdf-icon">📄</div><div class="preview-info"><div class="preview-filename" id="fname_${doc.id}">—</div><div class="preview-size" id="fsize_${doc.id}">—</div><span class="preview-badge">PDF listo</span></div><button class="btn-remove" onclick="removeDoc('${doc.id}')">✕</button></div>`;
+    list.appendChild(card);
+  });
+}
+function startRename(docId) {
+  const labelEl = document.getElementById('label_'+docId);
+  const input = document.createElement('input');
+  input.type='text'; input.value=labelEl.textContent; input.className='doc-name-input';
+  labelEl.replaceWith(input); input.focus(); input.select();
+  function save() { const v=input.value.trim()||'Otros Documentos'; const s=document.createElement('span'); s.id='label_'+docId; s.textContent=v; input.replaceWith(s); if(uploadedDocs[docId]) uploadedDocs[docId].docType=v; }
+  input.addEventListener('blur',save);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();save();}});
+}
+function triggerFile(d){activeDocId=d;const i=document.getElementById('globalFileInput');i.value='';i.click();}
+function triggerCamera(d){activeDocId=d;const i=document.getElementById('globalCameraInput');i.value='';i.click();}
+document.getElementById('globalFileInput').addEventListener('change',e=>{if(e.target.files[0])processImage(e.target.files[0],activeDocId);});
+document.getElementById('globalCameraInput').addEventListener('change',e=>{if(e.target.files[0])processImage(e.target.files[0],activeDocId);});
+async function processImage(file,docId) {
+  showToast('Convirtiendo a PDF...');
+  document.getElementById('processingBar').classList.add('active');
+  try {
+    const imgDataUrl = await new Promise((r,j)=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.onerror=j;x.readAsDataURL(file);});
+    const img = await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=imgDataUrl;});
+    const pdf = new jsPDF({orientation:img.width>img.height?'landscape':'portrait',unit:'mm',format:'a4'});
+    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=8;
+    let dw=pw-m*2,dh=(img.height/img.width)*dw;
+    if(dh>ph-m*2){dh=ph-m*2;dw=(img.width/img.height)*dh;}
+    pdf.addImage(imgDataUrl,'JPEG',(pw-dw)/2,(ph-dh)/2,dw,dh,undefined,'MEDIUM');
+    const docType=DOC_TYPES.find(d=>d.id===docId);
+    const mat=document.getElementById('matriculaInput').value.trim();
+    const base=docType?.renameable?(document.getElementById('label_'+docId)?.textContent||'Otros'):docType.label;
+    const safe=s=>s.replace(/\s+/g,'_').replace(/[^\w_]/g,'');
+    const pdfName=mat?`${safe(mat)}_${safe(base)}.pdf`:`${safe(base)}.pdf`;
+    const pdfBlob=pdf.output('blob');
+    uploadedDocs[docId]={blob:pdfBlob,filename:pdfName,size:(pdfBlob.size/1024).toFixed(1)+' KB',docType:base};
+    document.getElementById('card_'+docId).classList.add('uploaded');
+    document.getElementById('actions_'+docId).classList.add('hidden');
+    document.getElementById('preview_'+docId).classList.add('visible');
+    document.getElementById('status_'+docId).textContent='Subido · listo para enviar';
+    document.getElementById('fname_'+docId).textContent=pdfName;
+    document.getElementById('fsize_'+docId).textContent=(pdfBlob.size/1024).toFixed(1)+' KB';
+    document.getElementById('icon_'+docId).innerHTML=iconDone();
+    updateProgress();
+    showToast('PDF generado correctamente');
+  } catch(e){console.error(e);showToast('Error procesando imagen');}
+  finally{document.getElementById('processingBar').classList.remove('active');}
+}
+function removeDoc(docId) {
+  delete uploadedDocs[docId];
+  document.getElementById('card_'+docId).classList.remove('uploaded');
+  document.getElementById('actions_'+docId).classList.remove('hidden');
+  document.getElementById('preview_'+docId).classList.remove('visible');
+  document.getElementById('status_'+docId).textContent='Sin subir';
+  document.getElementById('icon_'+docId).innerHTML=iconPending();
+  updateProgress();
+}
+function updateProgress() {
+  const n=Object.keys(uploadedDocs).length;
+  document.getElementById('progressText').textContent=`${n} de 9 docs`;
+  document.getElementById('progressFill').style.width=`${(n/9)*100}%`;
+  document.getElementById('uploadedBadge').textContent=`${n}/9`;
+  document.getElementById('submitBtn').disabled=n===0;
+}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+document.getElementById('submitBtn').addEventListener('click',async function(){
+  const btn=this;
+  const webhookUrl=document.getElementById('webhookInput').value.trim();
+  const uploaded=Object.keys(uploadedDocs).length;
+  if(!uploaded)return;
+  btn.innerHTML='<div class="spinner"></div> ENVIANDO...';
+  btn.disabled=true;
+  document.getElementById('processingBar').classList.add('active');
+  try {
+    if(webhookUrl){
+      const mat=document.getElementById('matriculaInput').value.trim();
+      for(const[docId,doc]of Object.entries(uploadedDocs)){
+        const form=new FormData();
+        form.append('file',doc.blob,doc.filename);
+        form.append('docType',doc.docType);
+        form.append('matricula',mat);
+        form.append('filename',doc.filename);
+        await fetch(webhookUrl,{method:'POST',body:form});
+      }
+    } else { await new Promise(r=>setTimeout(r,1500)); }
+    const mat=document.getElementById('matriculaInput').value.trim();
+    document.getElementById('modalMatricula').textContent=mat?`Matricula: ${mat.toUpperCase()} · ${uploaded} doc${uploaded>1?'s':''} enviado${uploaded>1?'s':''}`:`${uploaded} documento${uploaded>1?'s':''} enviado${uploaded>1?'s':''}`;
+    document.getElementById('modalOverlay').classList.add('show');
+  } catch(e){
+    showToast('Error al enviar. Revisa el webhook.');
+    btn.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg> ENVIAR DOCUMENTACION`;
+    btn.disabled=false;
+  } finally { document.getElementById('processingBar').classList.remove('active'); }
+});
+function resetApp(){
+  document.getElementById('modalOverlay').classList.remove('show');
+  for(const k in uploadedDocs)delete uploadedDocs[k];
+  document.getElementById('matriculaInput').value='';
+  buildUI(); updateProgress();
+  document.getElementById('submitBtn').innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg> ENVIAR DOCUMENTACION`;
+}
+buildUI(); updateProgress();
+</script>
+</body>
+</html>
