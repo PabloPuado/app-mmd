@@ -292,7 +292,7 @@ async function loadMarcas(){
 }
 async function addToSheet(marca,modelo,matricula,anio){
   try{
-    const range=encodeURIComponent("'"+SHEET_NAME+"'!A:F");
+    const range=SHEET_NAME.replace(/ /g,'%20')+'!A%3AF';
     const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
     const body={values:[[marca,modelo,matricula,'',anio,'']]};
     logMsg('URL: '+url);
