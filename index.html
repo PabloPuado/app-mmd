@@ -189,7 +189,7 @@ html,body{font-family:var(--fb);background:var(--g1);color:var(--bk);min-height:
 <input type="file" id="globalFileInput" accept="image/*" style="display:none">
 <input type="file" id="globalCameraInput" accept="image/*" capture="environment" style="display:none">
 
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const {jsPDF}=window.jspdf;
@@ -209,10 +209,22 @@ const DOC_TYPES=[
   {id:'otros',label:'Otros Documentos',renameable:true},
 ];
 function signIn(){
-  const c=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:async r=>{
-    if(r.access_token){accessToken=r.access_token;await loadUserInfo();await loadMarcas();showApp();}
-  }});
-  c.requestAccessToken();
+  try{
+    if(typeof google==='undefined'||!google.accounts){showToast('Cargando Google... inténtalo de nuevo');return;}
+    const c=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:async r=>{
+      if(r.error){showToast('Error al iniciar sesión: '+r.error);return;}
+      if(r.access_token){
+        accessToken=r.access_token;
+        try{await loadUserInfo();}catch(e){console.error('loadUserInfo error',e);}
+        try{await loadMarcas();}catch(e){console.error('loadMarcas error',e);showToast('Error cargando marcas');}
+        showApp();
+      }
+    }});
+    c.requestAccessToken();
+  }catch(e){
+    console.error('signIn error',e);
+    showToast('Error al conectar con Google');
+  }
 }
 function signOut(){
   google.accounts.oauth2.revoke(accessToken,()=>{
@@ -236,11 +248,21 @@ function showApp(){
 }
 async function loadMarcas(){
   const s=document.getElementById('marcaInput');
-  s.innerHTML='<option value="">Selecciona marca...</option>';
-  const q=encodeURIComponent(`'${DOCS_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&pageSize=100&fields=files(id,name)`,{headers:{Authorization:`Bearer ${accessToken}`}});
-  const d=await r.json();
-  (d.files||[]).forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;s.appendChild(o);});
+  s.innerHTML='<option value="">Cargando marcas...</option>';
+  try{
+    const q=encodeURIComponent(`'${DOCS_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&pageSize=100&fields=files(id,name)`,{headers:{Authorization:`Bearer ${accessToken}`}});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    if(d.error) throw new Error(d.error.message);
+    s.innerHTML='<option value="">Selecciona marca...</option>';
+    (d.files||[]).forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;s.appendChild(o);});
+    if(!d.files||d.files.length===0) s.innerHTML='<option value="">No se encontraron marcas</option>';
+  }catch(e){
+    console.error('loadMarcas',e);
+    s.innerHTML='<option value="">Error al cargar marcas</option>';
+    showToast('Error cargando Drive: '+e.message);
+  }
 }
 async function findFolder(name,parentId){
   const q=encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
