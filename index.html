@@ -269,13 +269,19 @@ async function loadMarcas(){
 }
 async function addToSheet(marca,modelo,matricula,anio){
   try{
-    const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}!A:F:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const range=encodeURIComponent(SHEET_NAME+'!A:F');
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
     const body={values:[[marca,modelo,matricula,'',anio,'']]};
+    console.log('Sheets URL:',url);
+    console.log('Sheets body:',JSON.stringify(body));
     const r=await fetch(url,{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    console.log('Sheets response:',JSON.stringify(data));
+    if(!r.ok) throw new Error('HTTP '+r.status+' '+JSON.stringify(data));
     return true;
   }catch(e){
-    console.error('addToSheet error',e);
+    console.error('addToSheet error:',e.message);
+    showToast('Error Sheets: '+e.message);
     return false;
   }
 }
