@@ -293,7 +293,7 @@ async function processImage(file,docId){
     pdf.addImage(imgDataUrl,'JPEG',(pw-dw)/2,(ph-dh)/2,dw,dh,undefined,'MEDIUM');
     const docType=DOC_TYPES.find(d=>d.id===docId);
     const base=docType?.renameable?(document.getElementById('label_'+docId)?.textContent||'Otros'):docType.label;
-    const safe=s=>s.replace(/\s+/g,'_').replace(/[^\w_]/g,'').toUpperCase();
+    const safe=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'_').replace(/[^\w_]/g,'').toUpperCase();
     const pdfName=`${safe(base)}.pdf`;
     const pdfBlob=pdf.output('blob');
     uploadedDocs[docId]={blob:pdfBlob,filename:pdfName,size:(pdfBlob.size/1024).toFixed(1)+' KB',docType:base};
