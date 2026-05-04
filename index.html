@@ -353,7 +353,9 @@ async function confirmSend(){
     const mat=document.getElementById('matriculaInput').value.trim().toUpperCase();
     const motoName=`${marca} ${modelo} ${mat}`;
     if(WEBHOOK_URL){
-      for(const[docId,doc]of Object.entries(uploadedDocs)){
+      const docs=Object.entries(uploadedDocs);
+      for(let i=0;i<docs.length;i++){
+        const[docId,doc]=docs[i];
         const form=new FormData();
         form.append('file',doc.blob,doc.filename);
         form.append('docType',doc.docType);
@@ -362,7 +364,10 @@ async function confirmSend(){
         form.append('matricula',mat);
         form.append('motoName',motoName);
         form.append('filename',doc.filename);
+        form.append('docIndex',i);
+        form.append('docTotal',docs.length);
         await fetch(WEBHOOK_URL,{method:'POST',body:form});
+        if(i<docs.length-1) await new Promise(r=>setTimeout(r,2000));
       }
     } else { await new Promise(r=>setTimeout(r,1000)); }
     const n=Object.keys(uploadedDocs).length;
