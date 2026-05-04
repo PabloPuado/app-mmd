@@ -281,7 +281,7 @@ async function addToSheet(marca,modelo,matricula,anio){
     return true;
   }catch(e){
     console.error('addToSheet error:',e.message);
-    showToast('Error Sheets: '+e.message);
+    showToast('Error Sheets: '+e.message, 10000);
     return false;
   }
 }
@@ -367,7 +367,7 @@ function updateProgress(){
   document.getElementById('uploadedBadge').textContent=`${n}/9`;
   document.getElementById('submitBtn').disabled=n===0;
 }
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function showToast(msg,duration=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),duration);}
 document.getElementById('submitBtn').addEventListener('click',function(){
   const ms=document.getElementById('marcaInput');
   const mo=document.getElementById('modeloInput').value.trim();
