@@ -3,283 +3,321 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MMD – Documentación de Vehículo</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23E8500A'/><circle cx='50' cy='50' r='18' fill='none' stroke='white' stroke-width='6'/></svg>">
+<title>APP MMD</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --orange: #E8500A; --orange-dark: #B83D07; --orange-light: #FFF0E8;
-    --black: #1A1A1A; --gray-1: #F5F4F1; --gray-2: #E8E6E0; --gray-3: #9C9A95;
-    --white: #FFFFFF; --success: #2D7A3A; --success-light: #EAF5EC;
-    --font-display: 'Bebas Neue', sans-serif; --font-body: 'DM Sans', sans-serif; --radius: 14px;
-  }
-  html, body { font-family: var(--font-body); background: var(--gray-1); color: var(--black); min-height: 100vh; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
-  .header { background: var(--black); position: sticky; top: 0; z-index: 100; }
-  .header-inner { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 3px solid var(--orange); }
-  .logo-area { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 36px; height: 36px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .logo-text { font-family: var(--font-display); color: var(--white); font-size: 20px; letter-spacing: 1px; line-height: 1; }
-  .logo-sub { font-family: var(--font-body); color: var(--gray-3); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; line-height: 1; display: block; margin-top: 2px; }
-  .header-badge { background: var(--orange-light); color: var(--orange-dark); font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
-  /* checklist modal */
-  .checklist-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-2); }
-  .checklist-item:last-child { border-bottom: none; }
-  .checklist-item.done .cl-label { color: var(--success); font-weight: 500; }
-  .checklist-item.done .cl-icon { color: var(--success); }
-  .checklist-item.missing .cl-label { color: var(--gray-3); }
-  .checklist-item.missing .cl-icon { color: var(--gray-2); }
-  .cl-icon { flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
-  .cl-label { font-size: 13px; flex: 1; }
-  .moto-bar { background: var(--white); border-bottom: 1px solid var(--gray-2); padding: 14px 20px; display: flex; flex-direction: column; gap: 10px; }
-  .moto-row { display: flex; align-items: center; gap: 10px; }
-  .moto-bar-label { font-size: 10px; color: var(--gray-3); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; white-space: nowrap; min-width: 64px; }
-  .moto-bar-input { flex: 1; border: 1.5px solid var(--gray-2); border-radius: 8px; padding: 8px 12px; font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--black); background: var(--gray-1); outline: none; transition: border-color 0.2s; }
-  .moto-bar-input:focus { border-color: var(--orange); background: var(--white); }
-  .moto-bar-input.required-empty { border-color: #E24B4A; background: #FFF8F8; }
-  .progress-section { background: var(--white); padding: 14px 20px; border-bottom: 1px solid var(--gray-2); }
-  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .progress-label { font-size: 12px; color: var(--gray-3); font-weight: 500; }
-  .progress-count { font-size: 12px; font-weight: 600; color: var(--orange); }
-  .progress-bar-track { height: 5px; background: var(--gray-2); border-radius: 10px; overflow: hidden; }
-  .progress-bar-fill { height: 100%; background: var(--orange); border-radius: 10px; transition: width 0.4s ease; width: 0%; }
-  @keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
-  .processing-bar { height: 3px; background: linear-gradient(90deg, transparent, var(--orange), transparent); background-size: 200% 100%; animation: shimmer 1s infinite; display: none; }
-  .processing-bar.active { display: block; }
-  .main { padding: 16px; padding-bottom: 110px; }
-  .section-title { font-size: 11px; color: var(--gray-3); text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-bottom: 10px; margin-top: 4px; padding-left: 2px; }
-  .doc-card { background: var(--white); border-radius: var(--radius); border: 1.5px solid var(--gray-2); margin-bottom: 10px; overflow: hidden; transition: border-color 0.2s; }
-  .doc-card.uploaded { border-color: var(--success); }
-  .doc-card-header { display: flex; align-items: center; padding: 14px 16px; gap: 12px; }
-  .doc-number { width: 26px; height: 26px; border-radius: 6px; background: var(--gray-1); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--gray-3); flex-shrink: 0; transition: background 0.2s, color 0.2s; }
-  .doc-card.uploaded .doc-number { background: var(--success-light); color: var(--success); }
-  .doc-info { flex: 1; min-width: 0; }
-  .doc-name { font-size: 14px; font-weight: 600; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 6px; }
-  .doc-name-input { font-size: 14px; font-weight: 600; font-family: var(--font-body); color: var(--black); border: none; border-bottom: 2px solid var(--orange); outline: none; background: transparent; width: 100%; padding: 0; }
-  .doc-status { font-size: 11px; color: var(--gray-3); margin-top: 2px; font-weight: 400; }
-  .doc-card.uploaded .doc-status { color: var(--success); font-weight: 500; }
-  .doc-status-icon { width: 22px; height: 22px; flex-shrink: 0; }
-  .doc-actions { padding: 0 16px 14px; display: flex; gap: 8px; }
-  .doc-actions.hidden { display: none; }
-  .btn-action { flex: 1; border: none; border-radius: 10px; padding: 10px 8px; font-family: var(--font-body); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s ease; }
-  .btn-gallery { background: var(--gray-1); color: var(--black); border: 1.5px solid var(--gray-2); }
-  .btn-gallery:active { background: var(--gray-2); }
-  .btn-camera { background: var(--orange); color: var(--white); }
-  .btn-camera:active { background: var(--orange-dark); }
-  .doc-preview { display: none; padding: 0 16px 14px; gap: 10px; align-items: center; }
-  .doc-preview.visible { display: flex; }
-  .preview-pdf-icon { width: 48px; height: 60px; background: #FFF0E8; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 1px solid #F5C4A0; flex-shrink: 0; font-size: 22px; }
-  .preview-info { flex: 1; min-width: 0; }
-  .preview-filename { font-size: 12px; font-weight: 600; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .preview-size { font-size: 11px; color: var(--gray-3); margin-top: 2px; }
-  .preview-badge { background: var(--orange-light); color: var(--orange-dark); font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-top: 4px; display: inline-block; }
-  .btn-remove { width: 30px; height: 30px; border-radius: 50%; background: var(--gray-1); border: 1.5px solid var(--gray-2); color: var(--gray-3); font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
-  .btn-remove:active { background: #FCEBEB; border-color: #E24B4A; color: #E24B4A; }
-  .rename-btn { background: none; border: none; cursor: pointer; color: var(--gray-3); padding: 2px; display: inline-flex; align-items: center; }
-  .rename-btn:hover { color: var(--orange); }
-  .other-label-row { display: flex; align-items: center; gap: 4px; }
-  .bottom-cta { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 1px solid var(--gray-2); padding: 14px 20px; padding-bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 100; }
-  .btn-submit { width: 100%; background: var(--orange); color: var(--white); border: none; border-radius: 14px; padding: 16px; font-family: var(--font-display); font-size: 20px; letter-spacing: 1.5px; cursor: pointer; transition: background 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .btn-submit:active { background: var(--orange-dark); transform: scale(0.98); }
-  .btn-submit:disabled { background: var(--gray-2); color: var(--gray-3); cursor: not-allowed; transform: none; }
-  .toast { position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--black); color: var(--white); padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 200; white-space: nowrap; pointer-events: none; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
-  .modal-overlay.show { display: flex; }
-  .modal-box { background: var(--white); border-radius: 20px; padding: 32px 24px; text-align: center; max-width: 340px; width: 100%; }
-  .modal-icon { width: 64px; height: 64px; background: var(--success-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-  .modal-title { font-family: var(--font-display); font-size: 28px; color: var(--black); margin-bottom: 8px; letter-spacing: 1px; }
-  .modal-desc { font-size: 13px; color: var(--gray-3); line-height: 1.6; margin-bottom: 20px; }
-  .modal-highlight { background: var(--gray-1); border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 20px; border: 1px solid var(--gray-2); }
-  .btn-modal-ok { width: 100%; background: var(--orange); color: var(--white); border: none; border-radius: 12px; padding: 14px; font-family: var(--font-display); font-size: 18px; letter-spacing: 1px; cursor: pointer; }
-  .btn-modal-ok:active { background: var(--orange-dark); }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--o:#E8500A;--od:#B83D07;--ol:#FFF0E8;--bk:#1A1A1A;--g1:#F5F4F1;--g2:#E8E6E0;--g3:#9C9A95;--wh:#fff;--s:#2D7A3A;--sl:#EAF5EC;--fd:'Bebas Neue',sans-serif;--fb:'DM Sans',sans-serif;--r:14px}
+html,body{font-family:var(--fb);background:var(--g1);color:var(--bk);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.hd{background:var(--bk);position:sticky;top:0;z-index:100}
+.hdi{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:3px solid var(--o)}
+.la{display:flex;align-items:center;gap:10px}
+.li{width:36px;height:36px;background:var(--o);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lt{font-family:var(--fd);color:var(--wh);font-size:20px;letter-spacing:1px;line-height:1}
+.ls{color:var(--g3);font-size:10px;letter-spacing:2px;text-transform:uppercase;line-height:1;display:block;margin-top:2px}
+.hb{background:var(--ol);color:var(--od);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px}
+.ub{display:none;background:#111;padding:8px 20px;border-bottom:1px solid #2a2a2a;align-items:center;justify-content:space-between}
+.ub.v{display:flex}
+.ui2{display:flex;align-items:center;gap:8px}
+.ua{width:24px;height:24px;border-radius:50%}
+.un{font-size:12px;color:#ccc;font-weight:500}
+.blo{font-size:11px;color:var(--g3);background:none;border:none;cursor:pointer;text-decoration:underline}
+.ls2{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 20px;text-align:center}
+.lt2{font-family:var(--fd);font-size:32px;letter-spacing:1px;margin-bottom:8px}
+.ld{font-size:14px;color:var(--g3);margin-bottom:32px;line-height:1.6}
+.bg2{display:flex;align-items:center;gap:12px;background:var(--wh);border:1.5px solid var(--g2);border-radius:12px;padding:14px 24px;font-family:var(--fb);font-size:15px;font-weight:600;color:var(--bk);cursor:pointer;transition:all .2s}
+.bg2:hover{border-color:var(--o);background:var(--ol)}
+.mb{background:var(--wh);border-bottom:1px solid var(--g2);padding:14px 20px;display:flex;flex-direction:column;gap:10px}
+.mr{display:flex;align-items:center;gap:10px}
+.ml{font-size:10px;color:var(--g3);text-transform:uppercase;letter-spacing:1px;font-weight:600;white-space:nowrap;min-width:64px}
+.mi{flex:1;border:1.5px solid var(--g2);border-radius:8px;padding:8px 12px;font-family:var(--fb);font-size:13px;font-weight:500;color:var(--bk);background:var(--g1);outline:none;transition:border-color .2s}
+.mi:focus{border-color:var(--o);background:var(--wh)}
+.mi.re{border-color:#E24B4A;background:#FFF8F8}
+.ms{flex:1;border:1.5px solid var(--g2);border-radius:8px;padding:8px 12px;font-family:var(--fb);font-size:13px;font-weight:500;color:var(--bk);background:var(--g1);outline:none;appearance:none}
+.ms:focus{border-color:var(--o);background:var(--wh)}
+.ms.re{border-color:#E24B4A}
+.ps{background:var(--wh);padding:14px 20px;border-bottom:1px solid var(--g2)}
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.pl{font-size:12px;color:var(--g3);font-weight:500}
+.pc{font-size:12px;font-weight:600;color:var(--o)}
+.pt{height:5px;background:var(--g2);border-radius:10px;overflow:hidden}
+.pf{height:100%;background:var(--o);border-radius:10px;transition:width .4s ease;width:0%}
+@keyframes shimmer{from{background-position:-200% 0}to{background-position:200% 0}}
+.pb{height:3px;background:linear-gradient(90deg,transparent,var(--o),transparent);background-size:200% 100%;animation:shimmer 1s infinite;display:none}
+.pb.a{display:block}
+.mn{padding:16px;padding-bottom:110px}
+.st{font-size:11px;color:var(--g3);text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:10px;margin-top:4px;padding-left:2px}
+.dc{background:var(--wh);border-radius:var(--r);border:1.5px solid var(--g2);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.dc.up{border-color:var(--s)}
+.dch{display:flex;align-items:center;padding:14px 16px;gap:12px}
+.dn{width:26px;height:26px;border-radius:6px;background:var(--g1);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--g3);flex-shrink:0}
+.dc.up .dn{background:var(--sl);color:var(--s)}
+.di{flex:1;min-width:0}
+.dnm{font-size:14px;font-weight:600;color:var(--bk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.dni{font-size:14px;font-weight:600;font-family:var(--fb);color:var(--bk);border:none;border-bottom:2px solid var(--o);outline:none;background:transparent;width:100%;padding:0}
+.ds{font-size:11px;color:var(--g3);margin-top:2px;font-weight:400}
+.dc.up .ds{color:var(--s);font-weight:500}
+.dsi{width:22px;height:22px;flex-shrink:0}
+.da{padding:0 16px 14px;display:flex;gap:8px}
+.da.h{display:none}
+.ba{flex:1;border:none;border-radius:10px;padding:10px 8px;font-family:var(--fb);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s ease}
+.bg3{background:var(--g1);color:var(--bk);border:1.5px solid var(--g2)}
+.bg3:active{background:var(--g2)}
+.bc{background:var(--o);color:var(--wh);border:none}
+.bc:active{background:var(--od)}
+.dp{display:none;padding:0 16px 14px;gap:10px;align-items:center}
+.dp.v{display:flex}
+.dpi{width:48px;height:60px;background:#FFF0E8;border-radius:6px;display:flex;align-items:center;justify-content:center;border:1px solid #F5C4A0;flex-shrink:0;font-size:22px}
+.dpin{flex:1;min-width:0}
+.dpfn{font-size:12px;font-weight:600;color:var(--bk);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dpsz{font-size:11px;color:var(--g3);margin-top:2px}
+.dpbg{background:var(--ol);color:var(--od);font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-top:4px;display:inline-block}
+.br2{width:30px;height:30px;border-radius:50%;background:var(--g1);border:1.5px solid var(--g2);color:var(--g3);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.br2:active{background:#FCEBEB;border-color:#E24B4A;color:#E24B4A}
+.rn{background:none;border:none;cursor:pointer;color:var(--g3);padding:2px;display:inline-flex;align-items:center}
+.rn:hover{color:var(--o)}
+.olr{display:flex;align-items:center;gap:4px}
+.bc2{position:fixed;bottom:0;left:0;right:0;background:var(--wh);border-top:1px solid var(--g2);padding:14px 20px;padding-bottom:calc(14px + env(safe-area-inset-bottom));z-index:100}
+.bs{width:100%;background:var(--o);color:var(--wh);border:none;border-radius:14px;padding:16px;font-family:var(--fd);font-size:20px;letter-spacing:1.5px;cursor:pointer;transition:background .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px}
+.bs:active{background:var(--od);transform:scale(.98)}
+.bs:disabled{background:var(--g2);color:var(--g3);cursor:not-allowed;transform:none}
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--bk);color:var(--wh);padding:10px 20px;border-radius:30px;font-size:13px;font-weight:500;opacity:0;transition:all .3s ease;z-index:200;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:20px}
+.mo.show{display:flex}
+.mb2{background:var(--wh);border-radius:20px;padding:24px;max-width:340px;width:100%;max-height:80vh;overflow-y:auto}
+.mt2{font-family:var(--fd);font-size:24px;color:var(--bk);margin-bottom:4px;letter-spacing:1px}
+.mst{font-size:12px;color:var(--g3);margin-bottom:16px}
+.ci{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--g2)}
+.ci:last-child{border-bottom:none}
+.ci.done .cll{color:var(--s);font-weight:500}
+.ci.missing .cll{color:var(--g3)}
+.cic{flex-shrink:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+.cll{font-size:13px;flex:1}
+.mbt{display:flex;gap:10px;margin-top:20px}
+.bbk{flex:1;background:var(--g1);color:var(--bk);border:1.5px solid var(--g2);border-radius:12px;padding:12px;font-family:var(--fd);font-size:16px;cursor:pointer}
+.bcf{flex:2;background:var(--o);color:var(--wh);border:none;border-radius:12px;padding:12px;font-family:var(--fd);font-size:16px;cursor:pointer}
+.bcf:active{background:var(--od)}
+.mic{width:64px;height:64px;background:var(--sl);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.mdc{font-size:13px;color:var(--g3);line-height:1.6;margin-bottom:16px;text-align:center}
+.mhl{background:var(--g1);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;color:var(--bk);margin-bottom:20px;border:1px solid var(--g2);text-align:center}
+.bmo{width:100%;background:var(--o);color:var(--wh);border:none;border-radius:12px;padding:14px;font-family:var(--fd);font-size:18px;letter-spacing:1px;cursor:pointer}
+.upi{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--g2);font-size:13px}
+.upi:last-child{border-bottom:none}
+.ust{font-size:16px;width:20px;text-align:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.spsm{width:14px;height:14px;border:2px solid var(--g2);border-top-color:var(--o);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="header-inner">
-    <div class="logo-area">
-      <div class="logo-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" fill="none" stroke="white" stroke-width="1.5"/>
-          <circle cx="12" cy="12" r="3" fill="white"/>
-        </svg>
-      </div>
-      <div>
-        <div class="logo-text">MOTOS MADRID DAKAR</div>
-        <span class="logo-sub">Documentación de vehículo</span>
-      </div>
+<div class="hd">
+  <div class="hdi">
+    <div class="la">
+      <div class="li"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z" fill="none" stroke="white" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="white"/></svg></div>
+      <div><div class="lt">MOTOS MADRID DAKAR</div><span class="ls">Documentación de vehículo</span></div>
     </div>
-    <div class="header-badge" id="uploadedBadge">0/9</div>
+    <div class="hb" id="uploadedBadge">0/9</div>
+  </div>
+  <div class="ub" id="userBar">
+    <div class="ui2"><img class="ua" id="userAvatar" src="" alt=""><span class="un" id="userName"></span></div>
+    <button class="blo" onclick="signOut()">Cerrar sesión</button>
   </div>
 </div>
 
-<div class="moto-bar">
-  <div class="moto-row">
-    <span class="moto-bar-label">Marca</span>
-    <input type="text" class="moto-bar-input" id="marcaInput" placeholder="Ej: BMW" autocomplete="off" />
-  </div>
-  <div class="moto-row">
-    <span class="moto-bar-label">Modelo</span>
-    <input type="text" class="moto-bar-input" id="modeloInput" placeholder="Ej: R 1200 GS" autocomplete="off" />
-  </div>
-  <div class="moto-row">
-    <span class="moto-bar-label">Matrícula</span>
-    <input type="text" class="moto-bar-input" id="matriculaInput" placeholder="Ej: 2085-KYH" autocomplete="off" />
-  </div>
-</div>
-
-<div class="progress-section">
-  <div class="progress-header">
-    <span class="progress-label">Documentos subidos</span>
-    <span class="progress-count" id="progressText">0 de 9 docs</span>
-  </div>
-  <div class="progress-bar-track">
-    <div class="progress-bar-fill" id="progressFill"></div>
-  </div>
-</div>
-
-<div class="processing-bar" id="processingBar"></div>
-
-<div class="main">
-  <div class="section-title">Documentación del vehículo</div>
-  <div id="docList"></div>
-</div>
-
-<div class="bottom-cta">
-  <button class="btn-submit" id="submitBtn" disabled>
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-    </svg>
-    ENVIAR DOCUMENTACIÓN
+<div class="ls2" id="loginScreen">
+  <div style="font-size:48px;margin-bottom:16px">🏍️</div>
+  <div class="lt2">APP MMD</div>
+  <div class="ld">Inicia sesión con tu cuenta Google<br>para subir documentación a Drive</div>
+  <button class="bg2" onclick="signIn()">
+    <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    Continuar con Google
   </button>
+</div>
+
+<div id="appContent" style="display:none">
+  <div class="mb">
+    <div class="mr"><span class="ml">Marca</span><select class="ms" id="marcaInput"><option value="">Cargando...</option></select></div>
+    <div class="mr"><span class="ml">Modelo</span><input type="text" class="mi" id="modeloInput" placeholder="Ej: R 1200 GS" autocomplete="off"/></div>
+    <div class="mr"><span class="ml">Matrícula</span><input type="text" class="mi" id="matriculaInput" placeholder="Ej: 2085-KYH" autocomplete="off"/></div>
+  </div>
+  <div class="ps">
+    <div class="ph"><span class="pl">Documentos subidos</span><span class="pc" id="progressText">0 de 9 docs</span></div>
+    <div class="pt"><div class="pf" id="progressFill"></div></div>
+  </div>
+  <div class="pb" id="processingBar"></div>
+  <div class="mn"><div class="st">Documentación del vehículo</div><div id="docList"></div></div>
+  <div class="bc2"><button class="bs" id="submitBtn" disabled>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+    SUBIR A DRIVE
+  </button></div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal-box">
-    <div class="modal-title" style="margin-bottom:4px;">Resumen de documentación</div>
-    <div style="font-size:12px;color:var(--gray-3);margin-bottom:16px;" id="modalMatricula">—</div>
+<div class="mo" id="modalOverlay">
+  <div class="mb2">
+    <div class="mt2">Resumen</div>
+    <div class="mst" id="modalSubtitle">—</div>
     <div id="checklistItems"></div>
-    <div style="display:flex;gap:10px;margin-top:20px;">
-      <button class="btn-modal-ok" style="background:var(--gray-1);color:var(--black);border:1.5px solid var(--gray-2);font-size:15px;" onclick="closeChecklist()">
-        ← Atrás
-      </button>
-      <button class="btn-modal-ok" onclick="confirmSend()">CONFIRMAR ENVÍO</button>
+    <div class="mbt">
+      <button class="bbk" onclick="closeChecklist()">← Atrás</button>
+      <button class="bcf" onclick="confirmSend()">SUBIR A DRIVE</button>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="successOverlay">
-  <div class="modal-box">
-    <div class="modal-icon">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2.5">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    </div>
-    <div class="modal-title">¡Documentación enviada!</div>
-    <div class="modal-desc">Los archivos han sido convertidos a PDF y enviados al sistema Make para su clasificación automática.</div>
-    <div class="modal-highlight" id="successMatricula">—</div>
-    <button class="btn-modal-ok" onclick="resetApp()">NUEVA MOTO</button>
+<div class="mo" id="uploadingOverlay">
+  <div class="mb2">
+    <div class="mt2" style="text-align:center;margin-bottom:4px">Subiendo...</div>
+    <div class="mst" style="text-align:center" id="uploadingMoto">—</div>
+    <div id="uploadProgress"></div>
+  </div>
+</div>
+
+<div class="mo" id="successOverlay">
+  <div class="mb2" style="text-align:center">
+    <div class="mic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="mt2" style="text-align:center">Subido a Drive</div>
+    <div class="mdc">La documentación ha sido guardada correctamente en Google Drive.</div>
+    <div class="mhl" id="successMatricula">—</div>
+    <button class="bmo" onclick="resetApp()">NUEVA MOTO</button>
   </div>
 </div>
 
 <input type="file" id="globalFileInput" accept="image/*" style="display:none">
 <input type="file" id="globalCameraInput" accept="image/*" capture="environment" style="display:none">
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-const { jsPDF } = window.jspdf;
-const DOC_TYPES = [
-  { id: 'permiso_circulacion',   label: 'Permiso de Circulación' },
-  { id: 'ficha_tecnica_anverso', label: 'Ficha Técnica Anverso' },
-  { id: 'ficha_tecnica_reverso', label: 'Ficha Técnica Reverso' },
-  { id: 'contrato_compraventa',  label: 'Contrato de Compraventa' },
-  { id: 'mandato_vendedor',      label: 'Mandato del Vendedor' },
-  { id: 'dni_anverso',           label: 'DNI Anverso' },
-  { id: 'dni_reverso',           label: 'DNI Reverso' },
-  { id: 'itv',                   label: 'ITV' },
-  { id: 'otros',                 label: 'Otros Documentos', renameable: true },
+const {jsPDF}=window.jspdf;
+const CLIENT_ID='1011659209906-1gt04dmuimcm2qhljmhj5335algm7vcf.apps.googleusercontent.com';
+const DOCS_FOLDER_ID='1qWF2PCR-ekAH5gVQ0CTH9gZOH4Fz5snf';
+const SCOPES='https://www.googleapis.com/auth/drive';
+let accessToken=null,uploadedDocs={},activeDocId=null;
+const DOC_TYPES=[
+  {id:'permiso_circulacion',label:'Permiso de Circulación'},
+  {id:'ficha_tecnica_anverso',label:'Ficha Técnica Anverso'},
+  {id:'ficha_tecnica_reverso',label:'Ficha Técnica Reverso'},
+  {id:'contrato_compraventa',label:'Contrato de Compraventa'},
+  {id:'mandato_vendedor',label:'Mandato del Vendedor'},
+  {id:'dni_anverso',label:'DNI Anverso'},
+  {id:'dni_reverso',label:'DNI Reverso'},
+  {id:'itv',label:'ITV'},
+  {id:'otros',label:'Otros Documentos',renameable:true},
 ];
-const uploadedDocs = {};
-let activeDocId = null;
-const iconPending = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8C6C0" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`;
-const iconDone = () => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
-function buildUI() {
-  const list = document.getElementById('docList');
-  list.innerHTML = '';
-  DOC_TYPES.forEach((doc, i) => {
-    const card = document.createElement('div');
-    card.className = 'doc-card'; card.id = 'card_' + doc.id;
-    const nameHTML = doc.renameable
-      ? `<div class="other-label-row"><span id="label_${doc.id}">${doc.label}</span><button class="rename-btn" onclick="startRename('${doc.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>`
-      : `<span>${doc.label}</span>`;
-    card.innerHTML = `<div class="doc-card-header"><div class="doc-number" id="num_${doc.id}">${i+1}</div><div class="doc-info"><div class="doc-name">${nameHTML}</div><div class="doc-status" id="status_${doc.id}">Sin subir</div></div><div class="doc-status-icon" id="icon_${doc.id}">${iconPending()}</div></div><div class="doc-actions" id="actions_${doc.id}"><button class="btn-action btn-gallery" onclick="triggerFile('${doc.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Galería</button><button class="btn-action btn-camera" onclick="triggerCamera('${doc.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Cámara</button></div><div class="doc-preview" id="preview_${doc.id}"><div class="preview-pdf-icon">📄</div><div class="preview-info"><div class="preview-filename" id="fname_${doc.id}">—</div><div class="preview-size" id="fsize_${doc.id}">—</div><span class="preview-badge">PDF listo</span></div><button class="btn-remove" onclick="removeDoc('${doc.id}')">✕</button></div>`;
+function signIn(){
+  const c=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPES,callback:async r=>{
+    if(r.access_token){accessToken=r.access_token;await loadUserInfo();await loadMarcas();showApp();}
+  }});
+  c.requestAccessToken();
+}
+function signOut(){
+  google.accounts.oauth2.revoke(accessToken,()=>{
+    accessToken=null;
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('appContent').style.display='none';
+    document.getElementById('userBar').classList.remove('v');
+  });
+}
+async function loadUserInfo(){
+  const r=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:`Bearer ${accessToken}`}});
+  const u=await r.json();
+  document.getElementById('userName').textContent=u.name||u.email;
+  if(u.picture)document.getElementById('userAvatar').src=u.picture;
+  document.getElementById('userBar').classList.add('v');
+}
+function showApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appContent').style.display='block';
+  buildUI();updateProgress();
+}
+async function loadMarcas(){
+  const s=document.getElementById('marcaInput');
+  s.innerHTML='<option value="">Selecciona marca...</option>';
+  const q=encodeURIComponent(`'${DOCS_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&pageSize=100&fields=files(id,name)`,{headers:{Authorization:`Bearer ${accessToken}`}});
+  const d=await r.json();
+  (d.files||[]).forEach(f=>{const o=document.createElement('option');o.value=f.id;o.textContent=f.name;s.appendChild(o);});
+}
+async function findFolder(name,parentId){
+  const q=encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,{headers:{Authorization:`Bearer ${accessToken}`}});
+  const d=await r.json();
+  return d.files&&d.files.length>0?d.files[0].id:null;
+}
+async function createFolder(name,parentId){
+  const r=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({name,mimeType:'application/vnd.google-apps.folder',parents:[parentId]})});
+  const d=await r.json();return d.id;
+}
+async function uploadFile(blob,filename,folderId){
+  const meta={name:filename,parents:[folderId]};
+  const form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+  form.append('file',blob);
+  const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`},body:form});
+  return r.ok;
+}
+const iconPending=()=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8C6C0" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`;
+const iconDone=()=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
+function buildUI(){
+  const list=document.getElementById('docList');list.innerHTML='';
+  DOC_TYPES.forEach((doc,i)=>{
+    const card=document.createElement('div');card.className='dc';card.id='card_'+doc.id;
+    const nameHTML=doc.renameable?`<div class="olr"><span id="label_${doc.id}">${doc.label}</span><button class="rn" onclick="startRename('${doc.id}')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></div>`:`<span>${doc.label}</span>`;
+    card.innerHTML=`<div class="dch"><div class="dn" id="num_${doc.id}">${i+1}</div><div class="di"><div class="dnm">${nameHTML}</div><div class="ds" id="status_${doc.id}">Sin subir</div></div><div class="dsi" id="icon_${doc.id}">${iconPending()}</div></div><div class="da" id="actions_${doc.id}"><button class="ba bg3" onclick="triggerFile('${doc.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Galería</button><button class="ba bc" onclick="triggerCamera('${doc.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Cámara</button></div><div class="dp" id="preview_${doc.id}"><div class="dpi">📄</div><div class="dpin"><div class="dpfn" id="fname_${doc.id}">—</div><div class="dpsz" id="fsize_${doc.id}">—</div><span class="dpbg">PDF listo</span></div><button class="br2" onclick="removeDoc('${doc.id}')">✕</button></div>`;
     list.appendChild(card);
   });
 }
-function startRename(docId) {
-  const labelEl = document.getElementById('label_'+docId);
-  const input = document.createElement('input');
-  input.type='text'; input.value=labelEl.textContent; input.className='doc-name-input';
-  labelEl.replaceWith(input); input.focus(); input.select();
-  function save() { const v=input.value.trim()||'Otros Documentos'; const s=document.createElement('span'); s.id='label_'+docId; s.textContent=v; input.replaceWith(s); if(uploadedDocs[docId]) uploadedDocs[docId].docType=v; }
-  input.addEventListener('blur',save);
-  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();save();}});
+function startRename(docId){
+  const l=document.getElementById('label_'+docId);const inp=document.createElement('input');
+  inp.type='text';inp.value=l.textContent;inp.className='dni';l.replaceWith(inp);inp.focus();inp.select();
+  function save(){const v=inp.value.trim()||'Otros Documentos';const s=document.createElement('span');s.id='label_'+docId;s.textContent=v;inp.replaceWith(s);if(uploadedDocs[docId])uploadedDocs[docId].docType=v;}
+  inp.addEventListener('blur',save);inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();save();}});
 }
 function triggerFile(d){activeDocId=d;const i=document.getElementById('globalFileInput');i.value='';i.click();}
 function triggerCamera(d){activeDocId=d;const i=document.getElementById('globalCameraInput');i.value='';i.click();}
 document.getElementById('globalFileInput').addEventListener('change',e=>{if(e.target.files[0])processImage(e.target.files[0],activeDocId);});
 document.getElementById('globalCameraInput').addEventListener('change',e=>{if(e.target.files[0])processImage(e.target.files[0],activeDocId);});
-async function processImage(file,docId) {
-  showToast('Convirtiendo a PDF...');
-  document.getElementById('processingBar').classList.add('active');
-  try {
-    const imgDataUrl = await new Promise((r,j)=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.onerror=j;x.readAsDataURL(file);});
-    const img = await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=imgDataUrl;});
-    const pdf = new jsPDF({orientation:img.width>img.height?'landscape':'portrait',unit:'mm',format:'a4'});
+async function processImage(file,docId){
+  showToast('Convirtiendo a PDF...');document.getElementById('processingBar').classList.add('a');
+  try{
+    const imgDataUrl=await new Promise((r,j)=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.onerror=j;x.readAsDataURL(file);});
+    const img=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=imgDataUrl;});
+    const pdf=new jsPDF({orientation:img.width>img.height?'landscape':'portrait',unit:'mm',format:'a4'});
     const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=8;
     let dw=pw-m*2,dh=(img.height/img.width)*dw;
     if(dh>ph-m*2){dh=ph-m*2;dw=(img.width/img.height)*dh;}
     pdf.addImage(imgDataUrl,'JPEG',(pw-dw)/2,(ph-dh)/2,dw,dh,undefined,'MEDIUM');
     const docType=DOC_TYPES.find(d=>d.id===docId);
-    const mat=document.getElementById('matriculaInput').value.trim();
     const base=docType?.renameable?(document.getElementById('label_'+docId)?.textContent||'Otros'):docType.label;
-    const marca=document.getElementById('marcaInput').value.trim();
-    const modelo=document.getElementById('modeloInput').value.trim();
     const safe=s=>s.replace(/\s+/g,'_').replace(/[^\w_]/g,'').toUpperCase();
-    const prefix=[marca,modelo,mat].filter(Boolean).map(safe).join('_');
-    const pdfName=prefix?`${prefix}_${safe(base)}.pdf`:`${safe(base)}.pdf`;
+    const pdfName=`${safe(base)}.pdf`;
     const pdfBlob=pdf.output('blob');
     uploadedDocs[docId]={blob:pdfBlob,filename:pdfName,size:(pdfBlob.size/1024).toFixed(1)+' KB',docType:base};
-    document.getElementById('card_'+docId).classList.add('uploaded');
-    document.getElementById('actions_'+docId).classList.add('hidden');
-    document.getElementById('preview_'+docId).classList.add('visible');
-    document.getElementById('status_'+docId).textContent='Subido · listo para enviar';
+    document.getElementById('card_'+docId).classList.add('up');
+    document.getElementById('actions_'+docId).classList.add('h');
+    document.getElementById('preview_'+docId).classList.add('v');
+    document.getElementById('status_'+docId).textContent='Listo para subir';
     document.getElementById('fname_'+docId).textContent=pdfName;
     document.getElementById('fsize_'+docId).textContent=(pdfBlob.size/1024).toFixed(1)+' KB';
     document.getElementById('icon_'+docId).innerHTML=iconDone();
-    updateProgress();
-    showToast('PDF generado correctamente');
-  } catch(e){console.error(e);showToast('Error procesando imagen');}
-  finally{document.getElementById('processingBar').classList.remove('active');}
+    updateProgress();showToast('PDF generado');
+  }catch(e){console.error(e);showToast('Error procesando imagen');}
+  finally{document.getElementById('processingBar').classList.remove('a');}
 }
-function removeDoc(docId) {
+function removeDoc(docId){
   delete uploadedDocs[docId];
-  document.getElementById('card_'+docId).classList.remove('uploaded');
-  document.getElementById('actions_'+docId).classList.remove('hidden');
-  document.getElementById('preview_'+docId).classList.remove('visible');
+  document.getElementById('card_'+docId).classList.remove('up');
+  document.getElementById('actions_'+docId).classList.remove('h');
+  document.getElementById('preview_'+docId).classList.remove('v');
   document.getElementById('status_'+docId).textContent='Sin subir';
   document.getElementById('icon_'+docId).innerHTML=iconPending();
   updateProgress();
 }
-function updateProgress() {
+function updateProgress(){
   const n=Object.keys(uploadedDocs).length;
   document.getElementById('progressText').textContent=`${n} de 9 docs`;
   document.getElementById('progressFill').style.width=`${(n/9)*100}%`;
@@ -287,106 +325,71 @@ function updateProgress() {
   document.getElementById('submitBtn').disabled=n===0;
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-
 document.getElementById('submitBtn').addEventListener('click',function(){
-  const uploaded=Object.keys(uploadedDocs).length;
-  if(!uploaded)return;
-
-  // Build checklist
-  const marca=document.getElementById('marcaInput').value.trim();
-  const modelo=document.getElementById('modeloInput').value.trim();
-  const mat=document.getElementById('matriculaInput').value.trim();
-  const missingFields=[];
-  if(!marca) missingFields.push('Marca');
-  if(!modelo) missingFields.push('Modelo');
-  if(!mat) missingFields.push('Matrícula');
-  if(missingFields.length){
-    missingFields.forEach(f=>{
-      const inp=document.getElementById(f.toLowerCase()==='marca'?'marcaInput':f.toLowerCase()==='modelo'?'modeloInput':'matriculaInput');
-      inp.classList.add('required-empty');
-      setTimeout(()=>inp.classList.remove('required-empty'),3000);
-    });
-    showToast('Rellena: '+missingFields.join(', '));
-    return;
-  }
-  const motoName=`${marca.toUpperCase()} ${modelo.toUpperCase()} ${mat.toUpperCase()}`;
-  document.getElementById('modalMatricula').textContent=motoName;
-
-  const container=document.getElementById('checklistItems');
-  container.innerHTML='';
+  const ms=document.getElementById('marcaInput');
+  const mo=document.getElementById('modeloInput').value.trim();
+  const ma=document.getElementById('matriculaInput').value.trim();
+  const miss=[];
+  if(!ms.value){ms.classList.add('re');setTimeout(()=>ms.classList.remove('re'),3000);miss.push('Marca');}
+  if(!mo){document.getElementById('modeloInput').classList.add('re');setTimeout(()=>document.getElementById('modeloInput').classList.remove('re'),3000);miss.push('Modelo');}
+  if(!ma){document.getElementById('matriculaInput').classList.add('re');setTimeout(()=>document.getElementById('matriculaInput').classList.remove('re'),3000);miss.push('Matrícula');}
+  if(miss.length){showToast('Rellena: '+miss.join(', '));return;}
+  const marcaNombre=ms.options[ms.selectedIndex].text;
+  const motoName=`${marcaNombre} ${mo.toUpperCase()} ${ma.toUpperCase()}`;
+  document.getElementById('modalSubtitle').textContent=motoName;
+  const container=document.getElementById('checklistItems');container.innerHTML='';
   DOC_TYPES.forEach(doc=>{
     const isDone=!!uploadedDocs[doc.id];
     const label=doc.renameable?(document.getElementById('label_'+doc.id)?.textContent||doc.label):doc.label;
-    const item=document.createElement('div');
-    item.className='checklist-item '+(isDone?'done':'missing');
-    item.innerHTML=`
-      <div class="cl-icon">
-        ${isDone
-          ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>'
-          : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D0CEC8" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>'
-        }
-      </div>
-      <span class="cl-label">${label}</span>
-      ${isDone?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2" style="flex-shrink:0"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>':''}
-    `;
+    const item=document.createElement('div');item.className='ci '+(isDone?'done':'missing');
+    item.innerHTML=`<div class="cic">${isDone?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>':'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D0CEC8" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>'}</div><span class="cll">${label}</span>`;
     container.appendChild(item);
   });
-
   document.getElementById('modalOverlay').classList.add('show');
 });
-
-function closeChecklist(){
-  document.getElementById('modalOverlay').classList.remove('show');
-}
-
+function closeChecklist(){document.getElementById('modalOverlay').classList.remove('show');}
 async function confirmSend(){
   document.getElementById('modalOverlay').classList.remove('show');
-  const btn=document.getElementById('submitBtn');
-  btn.innerHTML='<div class="spinner"></div> ENVIANDO...';
-  btn.disabled=true;
-  document.getElementById('processingBar').classList.add('active');
-
-  const WEBHOOK_URL='https://hook.eu1.make.com/1s1xgkk3oyipqebqihn5ykopfhvs2x2o';
-  try {
-    const marca=document.getElementById('marcaInput').value.trim().toUpperCase();
-    const modelo=document.getElementById('modeloInput').value.trim().toUpperCase();
-    const mat=document.getElementById('matriculaInput').value.trim().toUpperCase();
-    const motoName=`${marca} ${modelo} ${mat}`;
-    if(WEBHOOK_URL){
-      const form=new FormData();
-      form.append('marca',marca);
-      form.append('modelo',modelo);
-      form.append('matricula',mat);
-      form.append('motoName',motoName);
-      form.append('totalDocs',Object.keys(uploadedDocs).length);
-      Object.entries(uploadedDocs).forEach(([docId,doc],i)=>{
-        form.append(`file_${i}`,doc.blob,doc.filename);
-        form.append(`docType_${i}`,doc.docType);
-        form.append(`filename_${i}`,doc.filename);
-      });
-      await fetch(WEBHOOK_URL,{method:'POST',body:form});
-    } else { await new Promise(r=>setTimeout(r,1000)); }
-    const n=Object.keys(uploadedDocs).length;
-    document.getElementById('successMatricula').textContent=`${motoName} · ${n} doc${n>1?'s':''} enviado${n>1?'s':''}`;
+  const ms=document.getElementById('marcaInput');
+  const marcaId=ms.value;
+  const marcaNombre=ms.options[ms.selectedIndex].text;
+  const modelo=document.getElementById('modeloInput').value.trim().toUpperCase();
+  const matricula=document.getElementById('matriculaInput').value.trim().toUpperCase();
+  const motoName=`${marcaNombre} ${modelo} ${matricula}`;
+  const docs=Object.entries(uploadedDocs);
+  document.getElementById('uploadingMoto').textContent=motoName;
+  const pc=document.getElementById('uploadProgress');pc.innerHTML='';
+  docs.forEach(([docId,doc])=>{
+    const item=document.createElement('div');item.className='upi';item.id='progress_'+docId;
+    item.innerHTML=`<span class="ust"><span class="spsm"></span></span><span>${doc.docType}</span>`;
+    pc.appendChild(item);
+  });
+  document.getElementById('uploadingOverlay').classList.add('show');
+  try{
+    let motoFolderId=await findFolder(motoName,marcaId);
+    if(!motoFolderId)motoFolderId=await createFolder(motoName,marcaId);
+    for(const[docId,doc]of docs){
+      const ok=await uploadFile(doc.blob,doc.filename,motoFolderId);
+      const item=document.getElementById('progress_'+docId);
+      if(item)item.querySelector('.ust').innerHTML=ok?'✅':'❌';
+    }
+    document.getElementById('uploadingOverlay').classList.remove('show');
+    document.getElementById('successMatricula').textContent=motoName;
     document.getElementById('successOverlay').classList.add('show');
-  } catch(e){
-    showToast('Error al enviar. Inténtalo de nuevo.');
-  } finally {
-    document.getElementById('processingBar').classList.remove('active');
-    btn.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg> ENVIAR DOCUMENTACIÓN`;
-    btn.disabled=Object.keys(uploadedDocs).length===0;
+  }catch(e){
+    console.error(e);
+    document.getElementById('uploadingOverlay').classList.remove('show');
+    showToast('Error al subir. Inténtalo de nuevo.');
   }
 }
 function resetApp(){
-  document.getElementById('modalOverlay').classList.remove('show');
   document.getElementById('successOverlay').classList.remove('show');
-  for(const k in uploadedDocs)delete uploadedDocs[k];
-  document.getElementById('marcaInput').value='';
+  uploadedDocs={};
+  document.getElementById('marcaInput').selectedIndex=0;
   document.getElementById('modeloInput').value='';
   document.getElementById('matriculaInput').value='';
-  buildUI(); updateProgress();
+  buildUI();updateProgress();
 }
-buildUI(); updateProgress();
 </script>
 </body>
 </html>
