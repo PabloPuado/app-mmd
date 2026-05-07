@@ -305,6 +305,35 @@ const DOC_TYPES=[
   {id:'itv',label:'ITV'},
   {id:'otros',label:'Otros Documentos',renameable:true},
 ];
+async function trySilentLogin(){
+  // attempt silent token renewal — no popup, works if Google session still active on device
+  const savedEmail=localStorage.getItem('mmd_last_user');
+  if(!savedEmail) return false;
+  return new Promise(resolve=>{
+    try{
+      const c=google.accounts.oauth2.initTokenClient({
+        client_id:CLIENT_ID,scope:SCOPES,
+        hint:savedEmail, // tells Google which account to use
+        prompt:'', // empty = silent, no popup
+        callback:async r=>{
+          if(r.error||!r.access_token){resolve(false);return;}
+          accessToken=r.access_token;
+          tokenExpiresAt=Date.now()+(r.expires_in||3600)*1000;
+          try{await loadUserInfo();}catch(e){}
+          const userEmail=document.getElementById('userName').dataset.email||'';
+          if(AUTHORIZED_EMAILS.length>0&&!AUTHORIZED_EMAILS.map(e=>e.toLowerCase()).includes(userEmail.toLowerCase())){
+            accessToken=null;localStorage.removeItem('mmd_last_user');resolve(false);return;
+          }
+          try{localStorage.setItem('mmd_last_user',userEmail);}catch(e){}
+          try{await loadMarcas();}catch(e){}
+          showApp();resolve(true);
+        }
+      });
+      c.requestAccessToken();
+    }catch(e){resolve(false);}
+  });
+}
+
 function signIn(){
   try{
     if(typeof google==='undefined'||!google.accounts){showToast('Cargando Google... inténtalo de nuevo');return;}
@@ -312,16 +341,18 @@ function signIn(){
       if(r.error){showToast('Error al iniciar sesión: '+r.error);return;}
       if(r.access_token){
         accessToken=r.access_token;
-        tokenExpiresAt=Date.now()+(r.expires_in||3600)*1000; // FIX M-02: track expiry
+        tokenExpiresAt=Date.now()+(r.expires_in||3600)*1000;
         try{await loadUserInfo();}catch(e){console.error('loadUserInfo error',e);}
-        // FIX M-04: verify authorized account before granting access
         const userEmail=document.getElementById('userName').dataset.email||'';
-        if(AUTHORIZED_EMAILS.length>0&&!AUTHORIZED_EMAILS.includes(userEmail)){
+        if(AUTHORIZED_EMAILS.length>0&&!AUTHORIZED_EMAILS.map(e=>e.toLowerCase()).includes(userEmail.toLowerCase())){
           accessToken=null;
           google.accounts.oauth2.revoke(r.access_token,()=>{});
+          localStorage.removeItem('mmd_last_user');
           showToast('Acceso no autorizado para esta cuenta Google',6000);
           return;
         }
+        // persist email for silent renewal on next open
+        try{localStorage.setItem('mmd_last_user', userEmail);}catch(e){}
         try{await loadMarcas();}catch(e){console.error('loadMarcas error',e);showToast('Error cargando marcas');}
         showApp();
       }
@@ -335,6 +366,7 @@ function signIn(){
 function signOut(){
   google.accounts.oauth2.revoke(accessToken,()=>{
     accessToken=null;
+    try{localStorage.removeItem('mmd_last_user');}catch(e){}
     document.getElementById('loginScreen').style.display='flex';
     document.getElementById('appContent').style.display='none';
     document.getElementById('userBar').classList.remove('v');
@@ -578,6 +610,21 @@ function resetApp(){
   document.getElementById('matriculaInput').value='';
   buildUI();updateProgress();
 }
+
+// attempt silent login on page load if user has logged in before
+window.addEventListener('load',async()=>{
+  await new Promise(r=>setTimeout(r,900)); // wait for GSI script to initialize
+  if(typeof google!=='undefined'&&google.accounts&&google.accounts.oauth2){
+    const saved=localStorage.getItem('mmd_last_user');
+    if(saved){
+      const ok=await trySilentLogin();
+      if(!ok){
+        // silent renewal failed — Google session expired, show normal login
+        document.getElementById('loginScreen').style.display='flex';
+      }
+    }
+  }
+});
 </script>
 </body>
 </html>
