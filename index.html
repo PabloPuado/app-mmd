@@ -274,23 +274,33 @@ let accessToken=null,tokenExpiresAt=0,uploadedDocs={},activeDocId=null;
 
 // FIX M-02: wrap all API calls to detect 401 (token expired) and force re-login
 async function apiFetch(url,opts={}){
-  if(Date.now()>tokenExpiresAt-60000){
-    // token expired or expiring in <60s — force re-login
-    accessToken=null;
-    document.getElementById('appContent').style.display='none';
-    document.getElementById('loginScreen').style.display='flex';
-    document.getElementById('userBar').classList.remove('v');
-    showToast('Sesión expirada. Por favor inicia sesión de nuevo.',5000);
-    throw new Error('TOKEN_EXPIRED');
+  // only check expiry if we have a token and expiry set
+  if(accessToken && tokenExpiresAt>0 && Date.now()>tokenExpiresAt-60000){
+    // try silent renewal first before forcing re-login
+    const renewed=await trySilentLogin().catch(()=>false);
+    if(!renewed){
+      accessToken=null;
+      document.getElementById('appContent').style.display='none';
+      document.getElementById('loginScreen').style.display='flex';
+      document.getElementById('userBar').classList.remove('v');
+      showToast('Sesión expirada. Inicia sesión de nuevo.',5000);
+      throw new Error('TOKEN_EXPIRED');
+    }
   }
   const r=await fetch(url,opts);
   if(r.status===401){
-    accessToken=null;
-    document.getElementById('appContent').style.display='none';
-    document.getElementById('loginScreen').style.display='flex';
-    document.getElementById('userBar').classList.remove('v');
-    showToast('Sesión expirada. Por favor inicia sesión de nuevo.',5000);
-    throw new Error('TOKEN_EXPIRED');
+    // try silent renewal on 401
+    const renewed=await trySilentLogin().catch(()=>false);
+    if(!renewed){
+      accessToken=null;
+      document.getElementById('appContent').style.display='none';
+      document.getElementById('loginScreen').style.display='flex';
+      document.getElementById('userBar').classList.remove('v');
+      showToast('Sesión expirada. Inicia sesión de nuevo.',5000);
+      throw new Error('TOKEN_EXPIRED');
+    }
+    // retry with new token
+    return await fetch(url,opts);
   }
   return r;
 }
