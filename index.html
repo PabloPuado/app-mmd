@@ -270,15 +270,11 @@ const DOCS_FOLDER_ID='1qWF2PCR-ekAH5gVQ0CTH9gZOH4Fz5snf';
 const SHEET_ID='1HGdvTUx5d53PKGU5mhuDHBTXpsinsUNjLtm673ydwxI';
 const SHEET_NAME='STOCK';
 const SCOPES='https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
-let accessToken=null,tokenExpiresAt=0,uploadedDocs={},activeDocId=null;
+let accessToken=null,uploadedDocs={},activeDocId=null;
 
-// FIX M-02: wrap all API calls to detect 401 (token expired) and force re-login
-async function apiFetch(url,opts={}){
-  // only check expiry if we have a token and expiry set
-  if(accessToken && tokenExpiresAt>0 && Date.now()>tokenExpiresAt-60000){
-    // try silent renewal first before forcing re-login
-    const renewed=await trySilentLogin().catch(()=>false);
-    if(!renewed){
+function apiFetch(url,opts={}){
+  return fetch(url,opts).then(r=>{
+    if(r.status===401){
       accessToken=null;
       document.getElementById('appContent').style.display='none';
       document.getElementById('loginScreen').style.display='flex';
@@ -286,23 +282,8 @@ async function apiFetch(url,opts={}){
       showToast('Sesión expirada. Inicia sesión de nuevo.',5000);
       throw new Error('TOKEN_EXPIRED');
     }
-  }
-  const r=await fetch(url,opts);
-  if(r.status===401){
-    // try silent renewal on 401
-    const renewed=await trySilentLogin().catch(()=>false);
-    if(!renewed){
-      accessToken=null;
-      document.getElementById('appContent').style.display='none';
-      document.getElementById('loginScreen').style.display='flex';
-      document.getElementById('userBar').classList.remove('v');
-      showToast('Sesión expirada. Inicia sesión de nuevo.',5000);
-      throw new Error('TOKEN_EXPIRED');
-    }
-    // retry with new token
-    return await fetch(url,opts);
-  }
-  return r;
+    return r;
+  });
 }
 const DOC_TYPES=[
   {id:'permiso_circulacion',label:'Permiso de Circulación'},
@@ -316,32 +297,34 @@ const DOC_TYPES=[
   {id:'otros',label:'Otros Documentos',renameable:true},
 ];
 async function trySilentLogin(){
-  // attempt silent token renewal — no popup, works if Google session still active on device
   const savedEmail=localStorage.getItem('mmd_last_user');
-  if(!savedEmail) return false;
+  if(!savedEmail||typeof google==='undefined'||!google.accounts) return false;
   return new Promise(resolve=>{
     try{
       const c=google.accounts.oauth2.initTokenClient({
-        client_id:CLIENT_ID,scope:SCOPES,
-        hint:savedEmail, // tells Google which account to use
-        prompt:'', // empty = silent, no popup
+        client_id:CLIENT_ID,
+        scope:SCOPES,
+        hint:savedEmail,
+        prompt:'',
         callback:async r=>{
           if(r.error||!r.access_token){resolve(false);return;}
           accessToken=r.access_token;
-          tokenExpiresAt=Date.now()+(r.expires_in||3600)*1000;
-          try{await loadUserInfo();}catch(e){}
-          const userEmail=document.getElementById('userName').dataset.email||'';
-          // TEMP: auth check disabled
-          console.log('SILENT userEmail:', JSON.stringify(userEmail));
-          try{localStorage.setItem('mmd_last_user',userEmail);}catch(e){}
-          try{await loadMarcas();}catch(e){}
-          showApp();resolve(true);
+          try{
+            await loadUserInfo();
+            await loadMarcas();
+            showApp();
+            resolve(true);
+          }catch(e){
+            accessToken=null;
+            resolve(false);
+          }
         }
       });
       c.requestAccessToken();
     }catch(e){resolve(false);}
   });
 }
+
 
 function signIn(){
   try{
@@ -353,8 +336,7 @@ function signIn(){
         tokenExpiresAt=Date.now()+(r.expires_in||3600)*1000;
         try{await loadUserInfo();}catch(e){console.error('loadUserInfo error',e);}
         const userEmail=document.getElementById('userName').dataset.email||'';
-        // TEMP: auth check disabled to diagnose email
-        console.log('AUTH CHECK — userEmail:', JSON.stringify(userEmail));
+        // AUTH CHECK DISABLED — email list is empty, Drive permissions control access
         // persist email for silent renewal on next open
         try{localStorage.setItem('mmd_last_user', userEmail);}catch(e){}
         try{await loadMarcas();}catch(e){console.error('loadMarcas error',e);showToast('Error cargando marcas');}
@@ -382,9 +364,7 @@ async function loadUserInfo(){
   document.getElementById('userName').textContent=u.name||u.email;
   document.getElementById('userName').dataset.email=u.email||''; // FIX M-04: store for auth check
   if(u.picture)document.getElementById('userAvatar').src=u.picture;
-  // TEMP DEBUG: show exact email from Google — remove after fixing
-  showToast('Email: '+(u.email||'undefined'), 8000);
-  console.log('Google email:', u.email, '| type:', typeof u.email);
+
   document.getElementById('userBar').classList.add('v');
 }
 function showApp(){
