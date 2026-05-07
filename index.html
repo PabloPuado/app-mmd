@@ -236,25 +236,64 @@ html,body{font-family:var(--fb);background:var(--g1);color:var(--bk);min-height:
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const {jsPDF}=window.jspdf;
+// FIX M-03: logs only store non-sensitive status messages, expire after 24h, max 20 entries
+// FIX I-01: debug logging disabled in production — only errors logged without sensitive data
+const IS_DEBUG=false; // set to true only during local development
 function logMsg(msg){
-  const logs=JSON.parse(localStorage.getItem('mmd_logs')||'[]');
-  logs.push({t:new Date().toLocaleTimeString(),m:String(msg)});
-  if(logs.length>50)logs.shift();
-  localStorage.setItem('mmd_logs',JSON.stringify(logs));
+  if(!IS_DEBUG)return; // disabled in production
+  try{
+    const logs=JSON.parse(localStorage.getItem('mmd_logs')||'[]');
+    // strip URLs and bodies from log messages to avoid storing sensitive data
+    const safe=String(msg).replace(/https?:\/\/[^\s]+/g,'[URL]').replace(/"values":\[\[.*?\]\]/g,'[DATA]');
+    const entry={t:new Date().toLocaleTimeString(),d:Date.now(),m:safe};
+    const fresh=logs.filter(l=>Date.now()-l.d<86400000); // keep only last 24h
+    fresh.push(entry);
+    if(fresh.length>20)fresh.shift(); // max 20 entries
+    localStorage.setItem('mmd_logs',JSON.stringify(fresh));
+  }catch(e){}
 }
 function showLogs(){
-  const logs=JSON.parse(localStorage.getItem('mmd_logs')||'[]');
-  const el=document.getElementById('logContent');
-  el.textContent=logs.length?logs.map(l=>l.t+' '+l.m).join('\n'):'Sin logs';
+  if(!IS_DEBUG){showToast('Debug deshabilitado en producción');return;}
+  try{
+    const logs=JSON.parse(localStorage.getItem('mmd_logs')||'[]');
+    const el=document.getElementById('logContent');
+    el.textContent=logs.length?logs.map(l=>l.t+' '+l.m).join('\n'):'Sin logs';
+  }catch(e){}
   document.getElementById('logOverlay').classList.add('show');
 }
-function clearLogs(){localStorage.removeItem('mmd_logs');}
+function clearLogs(){try{localStorage.removeItem('mmd_logs');}catch(e){}}
 const CLIENT_ID='1011659209906-1gt04dmuimcm2qhljmhj5335algm7vcf.apps.googleusercontent.com';
+// FIX M-04: only these Google accounts can access the app
+// ACCIÓN MANUAL: add all authorized email addresses here
+const AUTHORIZED_EMAILS=['facturacion.motosmadriddakar@gmail.com'];
 const DOCS_FOLDER_ID='1qWF2PCR-ekAH5gVQ0CTH9gZOH4Fz5snf';
 const SHEET_ID='1HGdvTUx5d53PKGU5mhuDHBTXpsinsUNjLtm673ydwxI';
 const SHEET_NAME='STOCK';
 const SCOPES='https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets';
-let accessToken=null,uploadedDocs={},activeDocId=null;
+let accessToken=null,tokenExpiresAt=0,uploadedDocs={},activeDocId=null;
+
+// FIX M-02: wrap all API calls to detect 401 (token expired) and force re-login
+async function apiFetch(url,opts={}){
+  if(Date.now()>tokenExpiresAt-60000){
+    // token expired or expiring in <60s — force re-login
+    accessToken=null;
+    document.getElementById('appContent').style.display='none';
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('userBar').classList.remove('v');
+    showToast('Sesión expirada. Por favor inicia sesión de nuevo.',5000);
+    throw new Error('TOKEN_EXPIRED');
+  }
+  const r=await fetch(url,opts);
+  if(r.status===401){
+    accessToken=null;
+    document.getElementById('appContent').style.display='none';
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('userBar').classList.remove('v');
+    showToast('Sesión expirada. Por favor inicia sesión de nuevo.',5000);
+    throw new Error('TOKEN_EXPIRED');
+  }
+  return r;
+}
 const DOC_TYPES=[
   {id:'permiso_circulacion',label:'Permiso de Circulación'},
   {id:'ficha_tecnica_anverso',label:'Ficha Técnica Anverso'},
@@ -273,7 +312,16 @@ function signIn(){
       if(r.error){showToast('Error al iniciar sesión: '+r.error);return;}
       if(r.access_token){
         accessToken=r.access_token;
+        tokenExpiresAt=Date.now()+(r.expires_in||3600)*1000; // FIX M-02: track expiry
         try{await loadUserInfo();}catch(e){console.error('loadUserInfo error',e);}
+        // FIX M-04: verify authorized account before granting access
+        const userEmail=document.getElementById('userName').dataset.email||'';
+        if(AUTHORIZED_EMAILS.length>0&&!AUTHORIZED_EMAILS.includes(userEmail)){
+          accessToken=null;
+          google.accounts.oauth2.revoke(r.access_token,()=>{});
+          showToast('Acceso no autorizado para esta cuenta Google',6000);
+          return;
+        }
         try{await loadMarcas();}catch(e){console.error('loadMarcas error',e);showToast('Error cargando marcas');}
         showApp();
       }
@@ -293,9 +341,10 @@ function signOut(){
   });
 }
 async function loadUserInfo(){
-  const r=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:`Bearer ${accessToken}`}});
+  const r=await apiFetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:`Bearer ${accessToken}`}});
   const u=await r.json();
   document.getElementById('userName').textContent=u.name||u.email;
+  document.getElementById('userName').dataset.email=u.email||''; // FIX M-04: store for auth check
   if(u.picture)document.getElementById('userAvatar').src=u.picture;
   document.getElementById('userBar').classList.add('v');
 }
@@ -309,7 +358,7 @@ async function loadMarcas(){
   s.innerHTML='<option value="">Cargando marcas...</option>';
   try{
     const q=encodeURIComponent(`'${DOCS_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-    const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&pageSize=100&fields=files(id,name)`,{headers:{Authorization:`Bearer ${accessToken}`}});
+    const r=await apiFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&pageSize=100&fields=files(id,name)`,{headers:{Authorization:`Bearer ${accessToken}`}});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const d=await r.json();
     if(d.error) throw new Error(d.error.message);
@@ -329,7 +378,7 @@ async function addToSheet(marca,modelo,matricula,anio){
     const body={values:[[marca,modelo,matricula,'',anio,'']]};
     logMsg('URL: '+url);
     logMsg('Body: '+JSON.stringify(body));
-    const r=await fetch(url,{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await apiFetch(url,{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data=await r.json();
     logMsg('Response '+r.status+': '+JSON.stringify(data));
     if(!r.ok) throw new Error('HTTP '+r.status+' - '+JSON.stringify(data));
@@ -342,12 +391,12 @@ async function addToSheet(marca,modelo,matricula,anio){
 }
 async function findFolder(name,parentId){
   const q=encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,{headers:{Authorization:`Bearer ${accessToken}`}});
+  const r=await apiFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,{headers:{Authorization:`Bearer ${accessToken}`}});
   const d=await r.json();
   return d.files&&d.files.length>0?d.files[0].id:null;
 }
 async function createFolder(name,parentId){
-  const r=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({name,mimeType:'application/vnd.google-apps.folder',parents:[parentId]})});
+  const r=await apiFetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({name,mimeType:'application/vnd.google-apps.folder',parents:[parentId]})});
   const d=await r.json();return d.id;
 }
 async function uploadFile(blob,filename,folderId){
@@ -355,7 +404,7 @@ async function uploadFile(blob,filename,folderId){
   const form=new FormData();
   form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
   form.append('file',blob);
-  const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`},body:form});
+  const r=await apiFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{Authorization:`Bearer ${accessToken}`},body:form});
   return r.ok;
 }
 const iconPending=()=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C8C6C0" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`;
@@ -380,6 +429,15 @@ function triggerCamera(d){activeDocId=d;const i=document.getElementById('globalC
 document.getElementById('globalFileInput').addEventListener('change',e=>{if(e.target.files[0])processImage(e.target.files[0],activeDocId);});
 document.getElementById('globalCameraInput').addEventListener('change',e=>{if(e.target.files[0])processImage(e.target.files[0],activeDocId);});
 async function processImage(file,docId){
+  // FIX H-03: validate real MIME type, not just HTML accept attribute (easily bypassed)
+  const ALLOWED_TYPES=['image/jpeg','image/jpg','image/png','image/webp','image/gif','image/heic','image/heif','image/bmp','image/tiff'];
+  const MAX_SIZE_MB=20;
+  if(!ALLOWED_TYPES.includes(file.type)){
+    showToast('Solo se permiten imágenes (JPG, PNG, WEBP, HEIC)');return;
+  }
+  if(file.size>MAX_SIZE_MB*1024*1024){
+    showToast('La imagen no puede superar '+MAX_SIZE_MB+'MB');return;
+  }
   showToast('Convirtiendo a PDF...');document.getElementById('processingBar').classList.add('a');
   try{
     const imgDataUrl=await new Promise((r,j)=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.onerror=j;x.readAsDataURL(file);});
@@ -444,22 +502,33 @@ document.getElementById('submitBtn').addEventListener('click',function(){
   container.appendChild(sheetsRow);
   DOC_TYPES.forEach(doc=>{
     const isDone=!!uploadedDocs[doc.id];
-    const label=doc.renameable?(document.getElementById('label_'+doc.id)?.textContent||doc.label):doc.label;
+    // FIX H-02: get label via textContent (already safe), never inject via innerHTML
+    const labelEl=document.getElementById('label_'+doc.id);
+    const label=doc.renameable?(labelEl?labelEl.textContent:doc.label):doc.label;
     const item=document.createElement('div');item.className='ci '+(isDone?'done':'missing');
-    item.innerHTML=`<div class="cic">${isDone?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>':'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D0CEC8" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>'}</div><span class="cll">${label}</span>`;
+    const cic=document.createElement('div');cic.className='cic';
+    cic.innerHTML=isDone?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D7A3A" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>':'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D0CEC8" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+    const cll=document.createElement('span');cll.className='cll';
+    cll.textContent=label; // safe: textContent never executes HTML
+    item.appendChild(cic);item.appendChild(cll);
     container.appendChild(item);
   });
   document.getElementById('modalOverlay').classList.add('show');
 });
 function closeChecklist(){document.getElementById('modalOverlay').classList.remove('show');}
 async function confirmSend(){
+  // FIX B-01: prevent double-submit idempotency issue
+  const confirmBtn=document.querySelector('.bcf');
+  if(confirmBtn)confirmBtn.disabled=true;
   document.getElementById('modalOverlay').classList.remove('show');
   const ms=document.getElementById('marcaInput');
   const marcaId=ms.value;
   const marcaNombre=ms.options[ms.selectedIndex].text;
-  const modelo=document.getElementById('modeloInput').value.trim().toUpperCase();
-  const matricula=document.getElementById('matriculaInput').value.trim().toUpperCase();
-  const anio=document.getElementById('anioInput').value.trim();
+  // FIX B-02: sanitize user inputs before using as Drive folder names
+  const safeName=s=>s.replace(/[/\\:*?"<>|]/g,'').trim().toUpperCase();
+  const modelo=safeName(document.getElementById('modeloInput').value.trim());
+  const matricula=safeName(document.getElementById('matriculaInput').value.trim());
+  const anio=document.getElementById('anioInput').value.trim().replace(/[^0-9]/g,'');
   const motoName=`${marcaNombre} ${modelo} ${matricula}`;
   const docs=Object.entries(uploadedDocs);
   document.getElementById('uploadingMoto').textContent=motoName;
@@ -471,7 +540,11 @@ async function confirmSend(){
   // Doc items
   docs.forEach(([docId,doc])=>{
     const item=document.createElement('div');item.className='upi';item.id='progress_'+docId;
-    item.innerHTML=`<span class="ust"><span class="spsm"></span></span><span>${doc.docType}</span>`;
+    // FIX H-02: build DOM safely, never inject user docType via innerHTML
+    const ust=document.createElement('span');ust.className='ust';
+    const spsm=document.createElement('span');spsm.className='spsm';ust.appendChild(spsm);
+    const lbl=document.createElement('span');lbl.textContent=doc.docType; // safe
+    item.appendChild(ust);item.appendChild(lbl);
     pc.appendChild(item);
   });
   document.getElementById('uploadingOverlay').classList.add('show');
