@@ -378,6 +378,9 @@ async function loadUserInfo(){
   document.getElementById('userName').textContent=u.name||u.email;
   document.getElementById('userName').dataset.email=u.email||''; // FIX M-04: store for auth check
   if(u.picture)document.getElementById('userAvatar').src=u.picture;
+  // TEMP DEBUG: show exact email from Google — remove after fixing
+  showToast('Email: '+(u.email||'undefined'), 8000);
+  console.log('Google email:', u.email, '| type:', typeof u.email);
   document.getElementById('userBar').classList.add('v');
 }
 function showApp(){
