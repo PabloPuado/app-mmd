@@ -384,11 +384,18 @@ async function processImage(file,docId){
   try{
     const imgDataUrl=await new Promise((r,j)=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.onerror=j;x.readAsDataURL(file);});
     const img=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=imgDataUrl;});
-    const pdf=new jsPDF({orientation:img.width>img.height?'landscape':'portrait',unit:'mm',format:'a4'});
-    const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=8;
-    let dw=pw-m*2,dh=(img.height/img.width)*dw;
-    if(dh>ph-m*2){dh=ph-m*2;dw=(img.width/img.height)*dh;}
-    pdf.addImage(imgDataUrl,'JPEG',(pw-dw)/2,(ph-dh)/2,dw,dh,undefined,'MEDIUM');
+    // Convert pixels to mm preserving exact aspect ratio (96dpi standard screen)
+    const PX_TO_MM = 25.4 / 96;
+    // Cap at A4 max dimensions while preserving aspect ratio
+    const MAX_W_MM = 210, MAX_H_MM = 297;
+    let imgWmm = img.width * PX_TO_MM;
+    let imgHmm = img.height * PX_TO_MM;
+    // Scale down if larger than A4, preserving ratio
+    if(imgWmm > MAX_W_MM){ const s=MAX_W_MM/imgWmm; imgWmm*=s; imgHmm*=s; }
+    if(imgHmm > MAX_H_MM){ const s=MAX_H_MM/imgHmm; imgWmm*=s; imgHmm*=s; }
+    // PDF page is exactly the image size — no white borders, no reorientation
+    const pdf=new jsPDF({orientation: imgWmm>=imgHmm?'landscape':'portrait', unit:'mm', format:[imgWmm,imgHmm]});
+    pdf.addImage(imgDataUrl,'JPEG',0,0,imgWmm,imgHmm,undefined,'FAST');
     const docType=DOC_TYPES.find(d=>d.id===docId);
     const base=docType?.renameable?(document.getElementById('label_'+docId)?.textContent||'Otros'):docType.label;
     const safe=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'_').replace(/[^\w_]/g,'').toUpperCase();
