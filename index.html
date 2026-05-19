@@ -384,18 +384,30 @@ async function processImage(file,docId){
   try{
     const imgDataUrl=await new Promise((r,j)=>{const x=new FileReader();x.onload=e=>r(e.target.result);x.onerror=j;x.readAsDataURL(file);});
     const img=await new Promise((r,j)=>{const i=new Image();i.onload=()=>r(i);i.onerror=j;i.src=imgDataUrl;});
-    // Convert pixels to mm preserving exact aspect ratio (96dpi standard screen)
+    // Use canvas to get real pixel dimensions
+    const naturalW = img.naturalWidth || img.width;
+    const naturalH = img.naturalHeight || img.height;
+    // Convert to mm at 96dpi
     const PX_TO_MM = 25.4 / 96;
-    // Cap at A4 max dimensions while preserving aspect ratio
-    const MAX_W_MM = 210, MAX_H_MM = 297;
-    let imgWmm = img.width * PX_TO_MM;
-    let imgHmm = img.height * PX_TO_MM;
-    // Scale down if larger than A4, preserving ratio
-    if(imgWmm > MAX_W_MM){ const s=MAX_W_MM/imgWmm; imgWmm*=s; imgHmm*=s; }
-    if(imgHmm > MAX_H_MM){ const s=MAX_H_MM/imgHmm; imgWmm*=s; imgHmm*=s; }
-    // PDF page is exactly the image size — no white borders, no reorientation
-    const pdf=new jsPDF({orientation: imgWmm>=imgHmm?'landscape':'portrait', unit:'mm', format:[imgWmm,imgHmm]});
-    pdf.addImage(imgDataUrl,'JPEG',0,0,imgWmm,imgHmm,undefined,'FAST');
+    let pW = naturalW * PX_TO_MM;
+    let pH = naturalH * PX_TO_MM;
+    // Scale down to max A4 short side 210mm, preserving ratio
+    const maxSide = 210;
+    const longestSide = Math.max(pW, pH);
+    if(longestSide > 297){ const s = 297/longestSide; pW*=s; pH*=s; }
+    // jsPDF bug workaround: always pass [width, height] with portrait orientation
+    // Portrait = height > width, landscape = width > height
+    // To avoid jsPDF swapping dimensions, always pass smaller side first = portrait,
+    // then rotate image if needed
+    const isLandscape = naturalW > naturalH;
+    // Create PDF with page exactly matching image dimensions
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: isLandscape ? [pH, pW] : [pW, pH]
+    });
+    // For landscape images, jsPDF with portrait+[h,w] gives us a wide page correctly
+    pdf.addImage(imgDataUrl, 'JPEG', 0, 0, isLandscape ? pW : pW, isLandscape ? pH : pH, undefined, 'FAST');
     const docType=DOC_TYPES.find(d=>d.id===docId);
     const base=docType?.renameable?(document.getElementById('label_'+docId)?.textContent||'Otros'):docType.label;
     const safe=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,'_').replace(/[^\w_]/g,'').toUpperCase();
